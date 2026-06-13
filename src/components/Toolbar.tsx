@@ -21,9 +21,13 @@ type ToolbarProps = {
 }
 
 const defaultTextColor = '#063f81'
+const maxTablePickerRows = 8
+const maxTablePickerCols = 8
 
 function Toolbar({ editor }: ToolbarProps) {
   const [, setEditorStateVersion] = useState(0)
+  const [isTableMenuOpen, setIsTableMenuOpen] = useState(false)
+  const [tablePickerSize, setTablePickerSize] = useState({ rows: 3, cols: 3 })
   const selectedTextRange = useRef<{ from: number; to: number } | null>(null)
 
   useEffect(() => {
@@ -84,10 +88,14 @@ function Toolbar({ editor }: ToolbarProps) {
       format_list_numbered: () => commandChain()?.focus().toggleOrderedList().run() ?? false,
       format_quote: () => commandChain()?.focus().toggleBlockquote().run() ?? false,
       horizontal_rule: () => commandChain()?.focus().setHorizontalRule().run() ?? false,
-      table: () => commandChain()?.focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run() ?? false,
     }
 
     commands[icon]?.()
+  }
+
+  const insertTable = (rows: number, cols: number) => {
+    commandChain()?.focus().insertTable({ rows, cols, withHeaderRow: true }).run()
+    setIsTableMenuOpen(false)
   }
 
   const runTableAction = (command: string) => {
@@ -102,6 +110,7 @@ function Toolbar({ editor }: ToolbarProps) {
     }
 
     commands[command]?.()
+    setIsTableMenuOpen(false)
   }
 
   const isActive = (icon: string) => {
@@ -121,7 +130,6 @@ function Toolbar({ editor }: ToolbarProps) {
       format_list_bulleted: editor.isActive('bulletList'),
       format_list_numbered: editor.isActive('orderedList'),
       format_quote: editor.isActive('blockquote'),
-      table: editor.isActive('table'),
     }
 
     return activeStates[icon] ?? false
@@ -173,21 +181,70 @@ function Toolbar({ editor }: ToolbarProps) {
         </span>
       ))}
       <Divider />
-      {tableActions.map((item) => (
+      <div className="table-actions-dropdown">
         <button
-          className="tool-button"
-          disabled={!editor || !editor.isActive('table')}
-          key={item.command}
+          className={`tool-button table-actions-trigger ${isTableMenuOpen ? 'tool-button--active' : ''}`}
+          disabled={!editor}
           onMouseDown={(event) => {
             event.preventDefault()
-            runTableAction(item.command)
+            setIsTableMenuOpen((isOpen) => !isOpen)
           }}
-          title={item.title}
+          title="Table"
           type="button"
         >
-          <Icon>{item.icon}</Icon>
+          <Icon>table_chart</Icon>
+          <Icon>arrow_drop_down</Icon>
         </button>
-      ))}
+        {isTableMenuOpen && editor && (
+          <div className="table-actions-menu" role="menu" onMouseLeave={() => setTablePickerSize({ rows: 3, cols: 3 })}>
+            <div className="table-picker-label">
+              Insert table {tablePickerSize.rows} × {tablePickerSize.cols}
+            </div>
+            <div className="table-picker-grid" aria-label="Table size picker">
+              {Array.from({ length: maxTablePickerRows }, (_, rowIndex) => (
+                <div className="table-picker-row" key={rowIndex}>
+                  {Array.from({ length: maxTablePickerCols }, (_, colIndex) => {
+                    const rows = rowIndex + 1
+                    const cols = colIndex + 1
+                    const isSelected = rows <= tablePickerSize.rows && cols <= tablePickerSize.cols
+
+                    return (
+                      <button
+                        aria-label={`Insert ${rows} by ${cols} table`}
+                        className={`table-picker-cell ${isSelected ? 'table-picker-cell--selected' : ''}`}
+                        key={`${rows}-${cols}`}
+                        onMouseDown={(event) => {
+                          event.preventDefault()
+                          insertTable(rows, cols)
+                        }}
+                        onMouseEnter={() => setTablePickerSize({ rows, cols })}
+                        type="button"
+                      />
+                    )
+                  })}
+                </div>
+              ))}
+            </div>
+            <div className="table-actions-menu__divider" />
+            {tableActions.map((item) => (
+              <button
+                className="table-actions-menu__item"
+                disabled={!editor.isActive('table')}
+                key={item.command}
+                onMouseDown={(event) => {
+                  event.preventDefault()
+                  runTableAction(item.command)
+                }}
+                role="menuitem"
+                type="button"
+              >
+                <Icon>{item.icon}</Icon>
+                <span>{item.title}</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
       <div className="toolbar-spacer" />
       <button
         className="tool-button"

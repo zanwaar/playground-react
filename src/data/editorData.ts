@@ -25,7 +25,6 @@ export const formattingActions = [
   { icon: 'format_list_numbered', title: 'Numbered list' },
   { icon: 'format_quote', title: 'Blockquote' },
   { icon: 'horizontal_rule', title: 'Horizontal rule' },
-  { icon: 'table', title: 'Insert table' },
 ]
 
 export const tableActions = [
