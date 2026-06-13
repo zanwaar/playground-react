@@ -18,7 +18,14 @@ function ContextToolbar({ editor, position, visible }: ContextToolbarProps) {
   return (
     <div className={`context-toolbar ${visible ? 'context-toolbar--visible' : ''}`} style={{ left: position.x, top: position.y }}>
       {actions.map((action) => (
-        <button key={action.icon} onClick={action.command} onMouseDown={(event) => event.preventDefault()} type="button">
+        <button
+          key={action.icon}
+          onMouseDown={(event) => {
+            event.preventDefault()
+            action.command()
+          }}
+          type="button"
+        >
           <Icon>{action.icon}</Icon>
         </button>
       ))}
