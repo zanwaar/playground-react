@@ -32,7 +32,10 @@ function Toolbar({ editor }: ToolbarProps) {
     const commands: Record<string, () => boolean> = {
       format_bold: () => editor.chain().focus().toggleBold().run(),
       format_italic: () => editor.chain().focus().toggleItalic().run(),
-      format_align_left: () => editor.chain().focus().setParagraph().run(),
+      format_align_left: () => editor.chain().focus().setWordTextAlign('left').run(),
+      format_align_center: () => editor.chain().focus().setWordTextAlign('center').run(),
+      format_align_right: () => editor.chain().focus().setWordTextAlign('right').run(),
+      format_align_justify: () => editor.chain().focus().setWordTextAlign('justify').run(),
       format_line_spacing: () => editor.chain().focus().toggleBulletList().run(),
     }
 
@@ -45,6 +48,10 @@ function Toolbar({ editor }: ToolbarProps) {
     const activeStates: Record<string, boolean> = {
       format_bold: editor.isActive('bold'),
       format_italic: editor.isActive('italic'),
+      format_align_left: editor.isActive({ textAlign: 'left' }) || !['center', 'right', 'justify'].some((textAlign) => editor.isActive({ textAlign })),
+      format_align_center: editor.isActive({ textAlign: 'center' }),
+      format_align_right: editor.isActive({ textAlign: 'right' }),
+      format_align_justify: editor.isActive({ textAlign: 'justify' }),
       format_line_spacing: editor.isActive('bulletList'),
     }
 

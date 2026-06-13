@@ -16,6 +16,9 @@ export const formattingActions = [
   { icon: 'format_underlined', title: 'Underline' },
   { icon: 'format_color_text', title: 'Text color', highlighted: true },
   { icon: 'format_align_left', title: 'Align left' },
+  { icon: 'format_align_center', title: 'Align center' },
+  { icon: 'format_align_right', title: 'Align right' },
+  { icon: 'format_align_justify', title: 'Justify' },
   { icon: 'format_line_spacing', title: 'Line spacing' },
 ]
 
