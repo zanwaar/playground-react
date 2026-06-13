@@ -7,20 +7,6 @@
   overflow: hidden;
 }
 
-.editor-shell {
-  --word-page-border: #e1dfdd;
-  --word-page-shadow: var(--canvas-shadow);
-  --word-page-text-color: var(--on-surface-variant);
-  --word-page-heading-color: var(--on-surface);
-  --word-page-cover-heading-color: var(--on-background);
-  --word-page-muted-color: var(--on-surface-variant);
-  --word-page-primary: var(--primary);
-  --word-page-primary-container: var(--primary-container);
-  --word-page-surface-container: var(--surface-container);
-  --word-page-active-bg: var(--primary-fixed);
-  --word-page-active-color: var(--on-primary-fixed);
-}
-
 .material-symbols-outlined {
   font-size: 24px;
   font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
@@ -502,11 +488,6 @@ button {
     display: none;
   }
 
-  .a4-page {
-    min-height: 129.4vw;
-    padding: 11.76vw;
-    width: 100vw;
-  }
 
   .status-group--right {
     display: none;
