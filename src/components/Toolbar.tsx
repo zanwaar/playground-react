@@ -32,11 +32,17 @@ function Toolbar({ editor }: ToolbarProps) {
     const commands: Record<string, () => boolean> = {
       format_bold: () => editor.chain().focus().toggleBold().run(),
       format_italic: () => editor.chain().focus().toggleItalic().run(),
-      format_align_left: () => editor.chain().focus().setWordTextAlign('left').run(),
-      format_align_center: () => editor.chain().focus().setWordTextAlign('center').run(),
-      format_align_right: () => editor.chain().focus().setWordTextAlign('right').run(),
-      format_align_justify: () => editor.chain().focus().setWordTextAlign('justify').run(),
-      format_line_spacing: () => editor.chain().focus().toggleBulletList().run(),
+      format_underlined: () => editor.chain().focus().toggleUnderline().run(),
+      strikethrough_s: () => editor.chain().focus().toggleStrike().run(),
+      code: () => editor.chain().focus().toggleCode().run(),
+      format_align_left: () => editor.chain().focus().setTextAlign('left').run(),
+      format_align_center: () => editor.chain().focus().setTextAlign('center').run(),
+      format_align_right: () => editor.chain().focus().setTextAlign('right').run(),
+      format_align_justify: () => editor.chain().focus().setTextAlign('justify').run(),
+      format_list_bulleted: () => editor.chain().focus().toggleBulletList().run(),
+      format_list_numbered: () => editor.chain().focus().toggleOrderedList().run(),
+      format_quote: () => editor.chain().focus().toggleBlockquote().run(),
+      horizontal_rule: () => editor.chain().focus().setHorizontalRule().run(),
     }
 
     commands[icon]?.()
@@ -48,11 +54,16 @@ function Toolbar({ editor }: ToolbarProps) {
     const activeStates: Record<string, boolean> = {
       format_bold: editor.isActive('bold'),
       format_italic: editor.isActive('italic'),
+      format_underlined: editor.isActive('underline'),
+      strikethrough_s: editor.isActive('strike'),
+      code: editor.isActive('code'),
       format_align_left: editor.isActive({ textAlign: 'left' }) || !['center', 'right', 'justify'].some((textAlign) => editor.isActive({ textAlign })),
       format_align_center: editor.isActive({ textAlign: 'center' }),
       format_align_right: editor.isActive({ textAlign: 'right' }),
       format_align_justify: editor.isActive({ textAlign: 'justify' }),
-      format_line_spacing: editor.isActive('bulletList'),
+      format_list_bulleted: editor.isActive('bulletList'),
+      format_list_numbered: editor.isActive('orderedList'),
+      format_quote: editor.isActive('blockquote'),
     }
 
     return activeStates[icon] ?? false
@@ -78,8 +89,8 @@ function Toolbar({ editor }: ToolbarProps) {
       <Divider />
       {formattingActions.map((item, index) => (
         <span className="toolbar-group" key={item.icon}>
-          {index === 4 && <Divider />}
-          <button className={`tool-button ${isActive(item.icon) ? 'tool-button--active' : ''}`} disabled={!editor || item.icon === 'format_underlined' || item.icon === 'format_color_text'} onClick={() => runFormattingAction(item.icon)} title={item.title} type="button">
+          {[6, 10].includes(index) && <Divider />}
+          <button className={`tool-button ${isActive(item.icon) ? 'tool-button--active' : ''}`} disabled={!editor || item.icon === 'format_color_text'} onClick={() => runFormattingAction(item.icon)} title={item.title} type="button">
             <Icon className={item.highlighted ? 'icon-primary' : ''}>{item.icon}</Icon>
           </button>
         </span>

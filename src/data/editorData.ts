@@ -14,12 +14,17 @@ export const formattingActions = [
   { icon: 'format_bold', title: 'Bold' },
   { icon: 'format_italic', title: 'Italic' },
   { icon: 'format_underlined', title: 'Underline' },
+  { icon: 'strikethrough_s', title: 'Strike' },
+  { icon: 'code', title: 'Inline code' },
   { icon: 'format_color_text', title: 'Text color', highlighted: true },
   { icon: 'format_align_left', title: 'Align left' },
   { icon: 'format_align_center', title: 'Align center' },
   { icon: 'format_align_right', title: 'Align right' },
   { icon: 'format_align_justify', title: 'Justify' },
-  { icon: 'format_line_spacing', title: 'Line spacing' },
+  { icon: 'format_list_bulleted', title: 'Bullet list' },
+  { icon: 'format_list_numbered', title: 'Numbered list' },
+  { icon: 'format_quote', title: 'Blockquote' },
+  { icon: 'horizontal_rule', title: 'Horizontal rule' },
 ]
 
 export const tableOfContents = [

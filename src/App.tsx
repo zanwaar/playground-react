@@ -8,12 +8,14 @@ import StatusBar from './components/StatusBar'
 import Toolbar from './components/Toolbar'
 import TopNavBar from './components/TopNavBar'
 import Workspace from './components/Workspace'
+import { TextAlign } from './extensions/TextAlign'
 
 function App() {
   const [currentPage, setCurrentPage] = useState(1)
   const editor = useEditor({
     extensions: [
       StarterKit,
+      TextAlign,
       Page,
       PageBreak,
     ],
