@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import type { MouseEvent } from 'react'
 import { EditorContent } from '@tiptap/react'
 import type { Editor } from '@tiptap/react'
-import { paginateWordPages } from 'tiptap-extension-word-page'
+import { bindWordPagePagination } from 'tiptap-extension-word-page'
 import ContextToolbar from './ContextToolbar'
 
 type WorkspaceProps = {
@@ -12,36 +12,14 @@ type WorkspaceProps = {
 
 function Workspace({ editor, onPageChange }: WorkspaceProps) {
   const workspaceRef = useRef<HTMLElement>(null)
-  const isPaginatingRef = useRef(false)
   const [contextToolbar, setContextToolbar] = useState({ visible: false, x: 0, y: 0 })
 
   useEffect(() => {
     if (!editor) return undefined
+    const workspace = workspaceRef.current
+    if (!workspace) return undefined
 
-    const paginate = () => {
-      if (isPaginatingRef.current) return
-
-      const workspace = workspaceRef.current
-      if (!workspace) return
-
-      isPaginatingRef.current = true
-      paginateWordPages(editor, workspace)
-
-      window.requestAnimationFrame(() => {
-        isPaginatingRef.current = false
-      })
-    }
-
-    const schedulePagination = () => window.requestAnimationFrame(paginate)
-
-    editor.on('update', schedulePagination)
-    editor.on('selectionUpdate', schedulePagination)
-    schedulePagination()
-
-    return () => {
-      editor.off('update', schedulePagination)
-      editor.off('selectionUpdate', schedulePagination)
-    }
+    return bindWordPagePagination(editor, workspace)
   }, [editor])
 
   const handleScroll = () => {
