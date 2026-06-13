@@ -23,10 +23,12 @@ type ToolbarProps = {
 const defaultTextColor = '#063f81'
 const maxTablePickerRows = 8
 const maxTablePickerCols = 8
+type TableInsertMode = 'table' | 'grid'
 
 function Toolbar({ editor }: ToolbarProps) {
   const [, setEditorStateVersion] = useState(0)
   const [isTableMenuOpen, setIsTableMenuOpen] = useState(false)
+  const [tableInsertMode, setTableInsertMode] = useState<TableInsertMode>('table')
   const [tablePickerSize, setTablePickerSize] = useState({ rows: 3, cols: 3 })
   const selectedTextRange = useRef<{ from: number; to: number } | null>(null)
 
@@ -94,7 +96,12 @@ function Toolbar({ editor }: ToolbarProps) {
   }
 
   const insertTable = (rows: number, cols: number) => {
-    commandChain()?.focus().insertTable({ rows, cols, withHeaderRow: true }).run()
+    if (tableInsertMode === 'grid') {
+      commandChain()?.focus().insertGrid({ rows, cols }).run()
+    } else {
+      commandChain()?.focus().insertTable({ rows, cols, withHeaderRow: true }).run()
+    }
+
     setIsTableMenuOpen(false)
   }
 
@@ -197,8 +204,30 @@ function Toolbar({ editor }: ToolbarProps) {
         </button>
         {isTableMenuOpen && editor && (
           <div className="table-actions-menu" role="menu" onMouseLeave={() => setTablePickerSize({ rows: 3, cols: 3 })}>
+            <div className="table-insert-mode" aria-label="Table insert mode">
+              <button
+                className={`table-insert-mode__button ${tableInsertMode === 'table' ? 'table-insert-mode__button--active' : ''}`}
+                onMouseDown={(event) => {
+                  event.preventDefault()
+                  setTableInsertMode('table')
+                }}
+                type="button"
+              >
+                Table
+              </button>
+              <button
+                className={`table-insert-mode__button ${tableInsertMode === 'grid' ? 'table-insert-mode__button--active' : ''}`}
+                onMouseDown={(event) => {
+                  event.preventDefault()
+                  setTableInsertMode('grid')
+                }}
+                type="button"
+              >
+                Grid
+              </button>
+            </div>
             <div className="table-picker-label">
-              Insert table {tablePickerSize.rows} × {tablePickerSize.cols}
+              Insert {tableInsertMode} {tablePickerSize.rows} × {tablePickerSize.cols}
             </div>
             <div className="table-picker-grid" aria-label="Table size picker">
               {Array.from({ length: maxTablePickerRows }, (_, rowIndex) => (
