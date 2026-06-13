@@ -1,9 +1,7 @@
-import { useEffect, useRef, useState } from 'react'
-import type { MouseEvent } from 'react'
+import { useEffect, useRef } from 'react'
 import { EditorContent } from '@tiptap/react'
 import type { Editor } from '@tiptap/react'
 import { bindWordPagePagination } from 'tiptap-extension-word-page'
-import ContextToolbar from './ContextToolbar'
 
 type WorkspaceProps = {
   editor: Editor | null
@@ -12,7 +10,6 @@ type WorkspaceProps = {
 
 function Workspace({ editor, onPageChange }: WorkspaceProps) {
   const workspaceRef = useRef<HTMLElement>(null)
-  const [contextToolbar, setContextToolbar] = useState({ visible: false, x: 0, y: 0 })
 
   useEffect(() => {
     if (!editor) return undefined
@@ -35,27 +32,9 @@ function Workspace({ editor, onPageChange }: WorkspaceProps) {
     onPageChange(currentPage)
   }
 
-  const handleSelection = (event: MouseEvent<HTMLElement>) => {
-    const selection = window.getSelection()?.toString().trim()
-
-    if (!selection) {
-      setContextToolbar((toolbar) => ({ ...toolbar, visible: false }))
-      return
-    }
-
-    setContextToolbar({ visible: true, x: event.clientX - 60, y: event.clientY - 45 })
-  }
-
-  const hideContextToolbar = (event: MouseEvent<HTMLElement>) => {
-    if (!(event.target as HTMLElement).closest('.a4-page, .context-toolbar')) {
-      setContextToolbar((toolbar) => ({ ...toolbar, visible: false }))
-    }
-  }
-
   return (
-    <main className="workspace custom-scrollbar" onMouseDown={hideContextToolbar} onMouseUp={handleSelection} onScroll={handleScroll} ref={workspaceRef}>
+    <main className="workspace custom-scrollbar" onScroll={handleScroll} ref={workspaceRef}>
       <EditorContent editor={editor} />
-      <ContextToolbar editor={editor} position={{ x: contextToolbar.x, y: contextToolbar.y }} visible={contextToolbar.visible} />
     </main>
   )
 }
