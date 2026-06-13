@@ -25,6 +25,15 @@ export const formattingActions = [
   { icon: 'format_list_numbered', title: 'Numbered list' },
   { icon: 'format_quote', title: 'Blockquote' },
   { icon: 'horizontal_rule', title: 'Horizontal rule' },
+  { icon: 'table', title: 'Insert table' },
+]
+
+export const tableActions = [
+  { icon: 'view_column_2', title: 'Add column after', command: 'addColumnAfter' },
+  { icon: 'splitscreen_add', title: 'Add row after', command: 'addRowAfter' },
+  { icon: 'delete_sweep', title: 'Delete column', command: 'deleteColumn' },
+  { icon: 'delete', title: 'Delete row', command: 'deleteRow' },
+  { icon: 'table_rows_narrow', title: 'Delete table', command: 'deleteTable' },
 ]
 
 export const tableOfContents = [

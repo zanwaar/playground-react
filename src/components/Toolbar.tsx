@@ -1,6 +1,6 @@
 import type { Editor } from '@tiptap/react'
-import { useEffect, useRef } from 'react'
-import { formattingActions, toolbarLeft } from '../data/editorData'
+import { useEffect, useRef, useState } from 'react'
+import { formattingActions, tableActions, toolbarLeft } from '../data/editorData'
 import Icon from './Icon'
 
 function Divider() {
@@ -23,6 +23,7 @@ type ToolbarProps = {
 const defaultTextColor = '#063f81'
 
 function Toolbar({ editor }: ToolbarProps) {
+  const [, setEditorStateVersion] = useState(0)
   const selectedTextRange = useRef<{ from: number; to: number } | null>(null)
 
   useEffect(() => {
@@ -34,13 +35,17 @@ function Toolbar({ editor }: ToolbarProps) {
       if (!empty) {
         selectedTextRange.current = { from, to }
       }
+
+      setEditorStateVersion((version) => version + 1)
     }
 
     editor.on('selectionUpdate', updateSelectedTextRange)
+    editor.on('transaction', updateSelectedTextRange)
     updateSelectedTextRange()
 
     return () => {
       editor.off('selectionUpdate', updateSelectedTextRange)
+      editor.off('transaction', updateSelectedTextRange)
     }
   }, [editor])
 
@@ -79,9 +84,24 @@ function Toolbar({ editor }: ToolbarProps) {
       format_list_numbered: () => commandChain()?.focus().toggleOrderedList().run() ?? false,
       format_quote: () => commandChain()?.focus().toggleBlockquote().run() ?? false,
       horizontal_rule: () => commandChain()?.focus().setHorizontalRule().run() ?? false,
+      table: () => commandChain()?.focus().insertTable({ rows: 3, cols: 3, withHeaderRow: true }).run() ?? false,
     }
 
     commands[icon]?.()
+  }
+
+  const runTableAction = (command: string) => {
+    if (!editor) return
+
+    const commands: Record<string, () => boolean> = {
+      addColumnAfter: () => commandChain()?.focus().addColumnAfter().run() ?? false,
+      addRowAfter: () => commandChain()?.focus().addRowAfter().run() ?? false,
+      deleteColumn: () => commandChain()?.focus().deleteColumn().run() ?? false,
+      deleteRow: () => commandChain()?.focus().deleteRow().run() ?? false,
+      deleteTable: () => commandChain()?.focus().deleteTable().run() ?? false,
+    }
+
+    commands[command]?.()
   }
 
   const isActive = (icon: string) => {
@@ -101,6 +121,7 @@ function Toolbar({ editor }: ToolbarProps) {
       format_list_bulleted: editor.isActive('bulletList'),
       format_list_numbered: editor.isActive('orderedList'),
       format_quote: editor.isActive('blockquote'),
+      table: editor.isActive('table'),
     }
 
     return activeStates[icon] ?? false
@@ -150,6 +171,22 @@ function Toolbar({ editor }: ToolbarProps) {
             <Icon className={item.highlighted ? 'icon-primary' : ''}>{item.icon}</Icon>
           </button>
         </span>
+      ))}
+      <Divider />
+      {tableActions.map((item) => (
+        <button
+          className="tool-button"
+          disabled={!editor || !editor.isActive('table')}
+          key={item.command}
+          onMouseDown={(event) => {
+            event.preventDefault()
+            runTableAction(item.command)
+          }}
+          title={item.title}
+          type="button"
+        >
+          <Icon>{item.icon}</Icon>
+        </button>
       ))}
       <div className="toolbar-spacer" />
       <button

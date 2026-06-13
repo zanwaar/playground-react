@@ -3,6 +3,7 @@ import { EditorContent } from '@tiptap/react'
 import type { Editor } from '@tiptap/react'
 import { bindWordPagePagination } from 'tiptap-docs-kit'
 
+
 type WorkspaceProps = {
   editor: Editor | null
   onPageChange: (page: number) => void
