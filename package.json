@@ -12,10 +12,9 @@
   "dependencies": {
     "@tiptap/pm": "^3.26.1",
     "@tiptap/react": "^3.26.1",
-    "@tiptap/starter-kit": "^3.26.1",
     "react": "^19.2.6",
     "react-dom": "^19.2.6",
-    "tiptap-extension-word-page": "file:../../packages/tiptap-extension-word-page"
+    "tiptap-docs-kit": "file:../../packages/tiptap-docs-kit"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

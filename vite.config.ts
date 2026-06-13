@@ -8,16 +8,16 @@ export default defineConfig({
   resolve: {
     alias: [
       {
-        find: /^tiptap-extension-word-page$/,
-        replacement: fileURLToPath(new URL('../../packages/tiptap-extension-word-page/src/index.ts', import.meta.url)),
+        find: /^tiptap-docs-kit$/,
+        replacement: fileURLToPath(new URL('../../packages/tiptap-docs-kit/src/index.ts', import.meta.url)),
       },
       {
-        find: 'tiptap-extension-word-page/style.css',
-        replacement: fileURLToPath(new URL('../../packages/tiptap-extension-word-page/src/style.css', import.meta.url)),
+        find: 'tiptap-docs-kit/style.css',
+        replacement: fileURLToPath(new URL('../../packages/tiptap-docs-kit/src/style.css', import.meta.url)),
       },
     ],
   },
   optimizeDeps: {
-    exclude: ['tiptap-extension-word-page'],
+    exclude: ['tiptap-docs-kit'],
   },
 })

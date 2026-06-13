@@ -20,6 +20,8 @@ type ToolbarProps = {
   editor: Editor | null
 }
 
+const defaultTextColor = '#063f81'
+
 function Toolbar({ editor }: ToolbarProps) {
   const selectedTextRange = useRef<{ from: number; to: number } | null>(null)
 
@@ -68,6 +70,7 @@ function Toolbar({ editor }: ToolbarProps) {
       format_underlined: () => commandChain()?.focus().toggleUnderline().run() ?? false,
       strikethrough_s: () => commandChain()?.focus().toggleStrike().run() ?? false,
       code: () => commandChain()?.focus().toggleCode().run() ?? false,
+      format_color_text: () => commandChain()?.focus().setTextColor(defaultTextColor).run() ?? false,
       format_align_left: () => commandChain()?.focus().setTextAlign('left').run() ?? false,
       format_align_center: () => commandChain()?.focus().setTextAlign('center').run() ?? false,
       format_align_right: () => commandChain()?.focus().setTextAlign('right').run() ?? false,
@@ -90,6 +93,7 @@ function Toolbar({ editor }: ToolbarProps) {
       format_underlined: editor.isActive('underline'),
       strikethrough_s: editor.isActive('strike'),
       code: editor.isActive('code'),
+      format_color_text: editor.isActive('textColor', { color: defaultTextColor }),
       format_align_left: editor.isActive({ textAlign: 'left' }) || !['center', 'right', 'justify'].some((textAlign) => editor.isActive({ textAlign })),
       format_align_center: editor.isActive({ textAlign: 'center' }),
       format_align_right: editor.isActive({ textAlign: 'right' }),
@@ -135,7 +139,7 @@ function Toolbar({ editor }: ToolbarProps) {
           {[6, 10].includes(index) && <Divider />}
           <button
             className={`tool-button ${isActive(item.icon) ? 'tool-button--active' : ''}`}
-            disabled={!editor || item.icon === 'format_color_text'}
+            disabled={!editor}
             onMouseDown={(event) => {
               event.preventDefault()
               runFormattingAction(item.icon)
