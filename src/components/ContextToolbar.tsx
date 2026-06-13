@@ -1,16 +1,25 @@
+import type { Editor } from '@tiptap/react'
 import Icon from './Icon'
 
 type ContextToolbarProps = {
+  editor: Editor | null
   position: { x: number; y: number }
   visible: boolean
 }
 
-function ContextToolbar({ position, visible }: ContextToolbarProps) {
+function ContextToolbar({ editor, position, visible }: ContextToolbarProps) {
+  const actions = [
+    { icon: 'format_bold', command: () => editor?.chain().focus().toggleBold().run() },
+    { icon: 'format_italic', command: () => editor?.chain().focus().toggleItalic().run() },
+    { icon: 'format_list_bulleted', command: () => editor?.chain().focus().toggleBulletList().run() },
+    { icon: 'add_comment', command: () => editor?.chain().focus().setParagraph().run() },
+  ]
+
   return (
     <div className={`context-toolbar ${visible ? 'context-toolbar--visible' : ''}`} style={{ left: position.x, top: position.y }}>
-      {['format_bold', 'format_italic', 'link', 'add_comment'].map((icon) => (
-        <button key={icon} onMouseDown={(event) => event.preventDefault()} type="button">
-          <Icon>{icon}</Icon>
+      {actions.map((action) => (
+        <button key={action.icon} onClick={action.command} onMouseDown={(event) => event.preventDefault()} type="button">
+          <Icon>{action.icon}</Icon>
         </button>
       ))}
     </div>

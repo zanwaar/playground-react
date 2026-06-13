@@ -2,14 +2,15 @@ import Icon from './Icon'
 
 type StatusBarProps = {
   currentPage: number
+  totalPages: number
 }
 
-function StatusBar({ currentPage }: StatusBarProps) {
+function StatusBar({ currentPage, totalPages }: StatusBarProps) {
   return (
     <footer className="status-bar">
       <div className="status-group">
-        <button type="button">Page {currentPage} of 3</button>
-        <button type="button">Word Count: 184 words</button>
+        <button type="button">Page {currentPage} of {totalPages}</button>
+        <button type="button">Word Count: live document</button>
       </div>
       <div className="status-group status-group--right">
         <button type="button"><Icon>spellcheck</Icon> Spelling: English</button>

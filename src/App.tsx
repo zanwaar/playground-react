@@ -1,4 +1,8 @@
 import { useState } from 'react'
+import { useEditor } from '@tiptap/react'
+import StarterKit from '@tiptap/starter-kit'
+import { Page, PageBreak, createBlankWordPageDocument } from 'tiptap-extension-word-page'
+import 'tiptap-extension-word-page/style.css'
 import './App.css'
 import StatusBar from './components/StatusBar'
 import Toolbar from './components/Toolbar'
@@ -7,13 +11,26 @@ import Workspace from './components/Workspace'
 
 function App() {
   const [currentPage, setCurrentPage] = useState(1)
+  const editor = useEditor({
+    extensions: [
+      StarterKit,
+      Page,
+      PageBreak,
+    ],
+    content: createBlankWordPageDocument(),
+    editorProps: {
+      attributes: {
+        class: 'word-editor-document',
+      },
+    },
+  })
 
   return (
     <div className="editor-shell">
       <TopNavBar />
-      <Toolbar />
-      <Workspace onPageChange={setCurrentPage} />
-      <StatusBar currentPage={currentPage} />
+      <Toolbar editor={editor} />
+      <Workspace editor={editor} onPageChange={setCurrentPage} />
+      <StatusBar currentPage={currentPage} totalPages={editor?.state.doc.childCount ?? 3} />
     </div>
   )
 }

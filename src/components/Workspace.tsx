@@ -1,15 +1,48 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import type { MouseEvent } from 'react'
+import { EditorContent } from '@tiptap/react'
+import type { Editor } from '@tiptap/react'
+import { paginateWordPages } from 'tiptap-extension-word-page'
 import ContextToolbar from './ContextToolbar'
-import { ContentsPage, CoverPage, PrefacePage } from './Pages'
 
 type WorkspaceProps = {
+  editor: Editor | null
   onPageChange: (page: number) => void
 }
 
-function Workspace({ onPageChange }: WorkspaceProps) {
+function Workspace({ editor, onPageChange }: WorkspaceProps) {
   const workspaceRef = useRef<HTMLElement>(null)
+  const isPaginatingRef = useRef(false)
   const [contextToolbar, setContextToolbar] = useState({ visible: false, x: 0, y: 0 })
+
+  useEffect(() => {
+    if (!editor) return undefined
+
+    const paginate = () => {
+      if (isPaginatingRef.current) return
+
+      const workspace = workspaceRef.current
+      if (!workspace) return
+
+      isPaginatingRef.current = true
+      paginateWordPages(editor, workspace)
+
+      window.requestAnimationFrame(() => {
+        isPaginatingRef.current = false
+      })
+    }
+
+    const schedulePagination = () => window.requestAnimationFrame(paginate)
+
+    editor.on('update', schedulePagination)
+    editor.on('selectionUpdate', schedulePagination)
+    schedulePagination()
+
+    return () => {
+      editor.off('update', schedulePagination)
+      editor.off('selectionUpdate', schedulePagination)
+    }
+  }, [editor])
 
   const handleScroll = () => {
     const workspace = workspaceRef.current
@@ -42,11 +75,9 @@ function Workspace({ onPageChange }: WorkspaceProps) {
   }
 
   return (
-    <main className="workspace custom-scrollbar" onMouseDown={hideContextToolbar} onScroll={handleScroll} ref={workspaceRef}>
-      <CoverPage onSelection={handleSelection} />
-      <PrefacePage onSelection={handleSelection} />
-      <ContentsPage onSelection={handleSelection} />
-      <ContextToolbar position={{ x: contextToolbar.x, y: contextToolbar.y }} visible={contextToolbar.visible} />
+    <main className="workspace custom-scrollbar" onMouseDown={hideContextToolbar} onMouseUp={handleSelection} onScroll={handleScroll} ref={workspaceRef}>
+      <EditorContent editor={editor} />
+      <ContextToolbar editor={editor} position={{ x: contextToolbar.x, y: contextToolbar.y }} visible={contextToolbar.visible} />
     </main>
   )
 }

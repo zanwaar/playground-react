@@ -7,6 +7,20 @@
   overflow: hidden;
 }
 
+.editor-shell {
+  --word-page-border: #e1dfdd;
+  --word-page-shadow: var(--canvas-shadow);
+  --word-page-text-color: var(--on-surface-variant);
+  --word-page-heading-color: var(--on-surface);
+  --word-page-cover-heading-color: var(--on-background);
+  --word-page-muted-color: var(--on-surface-variant);
+  --word-page-primary: var(--primary);
+  --word-page-primary-container: var(--primary-container);
+  --word-page-surface-container: var(--surface-container);
+  --word-page-active-bg: var(--primary-fixed);
+  --word-page-active-color: var(--on-primary-fixed);
+}
+
 .material-symbols-outlined {
   font-size: 24px;
   font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
@@ -276,23 +290,6 @@ button {
 .custom-scrollbar::-webkit-scrollbar-thumb {
   background: var(--outline-variant);
   border-radius: 4px;
-}
-
-.a4-page {
-  background: white;
-  border: 1px solid #e1dfdd;
-  box-shadow: var(--canvas-shadow);
-  box-sizing: border-box;
-  flex-shrink: 0;
-  margin: 48px auto;
-  min-height: 1056px;
-  padding: 96px;
-  position: relative;
-  width: 816px;
-}
-
-.a4-page--last {
-  margin-bottom: 96px;
 }
 
 .page-enter {
