@@ -59,7 +59,7 @@ function Toolbar({ editor }: ToolbarProps) {
     const chain = editor?.chain()
     if (!editor || !chain) return null
 
-    if (editor.state.selection.empty && selectedTextRange.current) {
+    if (!editor.isFocused && editor.state.selection.empty && selectedTextRange.current) {
       chain.setTextSelection(selectedTextRange.current)
     }
 
