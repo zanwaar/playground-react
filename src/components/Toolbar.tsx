@@ -1,4 +1,5 @@
 import type { Editor } from '@tiptap/react'
+import type { MouseEvent } from 'react'
 import { useEffect, useRef, useState } from 'react'
 import { formattingActions, tableActions, toolbarLeft } from '../data/editorData'
 import Icon from './Icon'
@@ -7,9 +8,9 @@ function Divider() {
   return <div className="divider" />
 }
 
-function DropdownLabel({ label }: { label: string }) {
+function DropdownLabel({ disabled = false, label, onMouseDown }: { disabled?: boolean; label: string; onMouseDown?: (event: MouseEvent<HTMLButtonElement>) => void }) {
   return (
-    <button className="dropdown-label" type="button">
+    <button className="dropdown-label" disabled={disabled} onMouseDown={onMouseDown} type="button">
       <span>{label}</span>
       <Icon>arrow_drop_down</Icon>
     </button>
@@ -21,9 +22,31 @@ type ToolbarProps = {
 }
 
 const defaultTextColor = '#063f81'
+const defaultFontFamily = 'Roboto'
 const defaultFontSize = 11
 const minFontSize = 6
 const maxFontSize = 96
+const allFontOptions = [
+  { label: 'Roboto', value: 'Roboto, Arial, sans-serif' },
+  { label: 'Amatic SC', value: '"Amatic SC", cursive' },
+  { label: 'Arial', value: 'Arial, sans-serif' },
+  { label: 'Calibri', value: 'Calibri, Arial, sans-serif' },
+  { label: 'Caveat', value: 'Caveat, cursive' },
+  { label: 'Comfortaa', value: 'Comfortaa, Arial, sans-serif' },
+  { label: 'Comic Sans MS', value: '"Comic Sans MS", "Comic Sans", cursive' },
+  { label: 'Courier New', value: '"Courier New", Courier, monospace' },
+  { label: 'EB Garamond', value: '"EB Garamond", Garamond, serif' },
+  { label: 'Georgia', value: 'Georgia, serif' },
+  { label: 'Impact', value: 'Impact, Haettenschweiler, "Arial Narrow Bold", sans-serif' },
+  { label: 'Lexend', value: 'Lexend, Arial, sans-serif' },
+  { label: 'Lobster', value: 'Lobster, cursive' },
+  { label: 'Lora', value: 'Lora, Georgia, serif' },
+  { label: 'Merriweather', value: 'Merriweather, Georgia, serif' },
+  { label: 'Montserrat', value: 'Montserrat, Arial, sans-serif' },
+  { label: 'Nunito', value: 'Nunito, Arial, sans-serif' },
+  { label: 'Times New Roman', value: '"Times New Roman", Times, serif' },
+]
+const fontOptions = allFontOptions
 const textColorPalette = ['#1c1b1f', '#5f6368', '#d93025', '#e37400', '#188038', '#1a73e8', '#673ab7', '#c2185b']
 const maxTablePickerRows = 8
 const maxTablePickerCols = 8
@@ -32,11 +55,16 @@ type TableInsertMode = 'table' | 'grid'
 function Toolbar({ editor }: ToolbarProps) {
   const [, setEditorStateVersion] = useState(0)
   const [isTableMenuOpen, setIsTableMenuOpen] = useState(false)
+  const [isFontMenuOpen, setIsFontMenuOpen] = useState(false)
   const [isTextColorMenuOpen, setIsTextColorMenuOpen] = useState(false)
+  const [selectedFontFamily, setSelectedFontFamily] = useState(defaultFontFamily)
   const [selectedFontSize, setSelectedFontSize] = useState(String(defaultFontSize))
   const [selectedTextColor, setSelectedTextColor] = useState(defaultTextColor)
   const [tableInsertMode, setTableInsertMode] = useState<TableInsertMode>('table')
   const [tablePickerSize, setTablePickerSize] = useState({ rows: 3, cols: 3 })
+  const fontDropdownRef = useRef<HTMLDivElement | null>(null)
+  const tableDropdownRef = useRef<HTMLDivElement | null>(null)
+  const textColorDropdownRef = useRef<HTMLDivElement | null>(null)
   const selectedTextRange = useRef<{ from: number; to: number } | null>(null)
 
   useEffect(() => {
@@ -51,7 +79,10 @@ function Toolbar({ editor }: ToolbarProps) {
 
       const textSize = editor.getAttributes('textSize').size
       const fontSize = typeof textSize === 'string' ? Number.parseFloat(textSize) : Number.NaN
+      const textFont = editor.getAttributes('textFont').fontFamily
+      const fontOption = typeof textFont === 'string' ? fontOptions.find((option) => option.value === textFont) : null
 
+      setSelectedFontFamily(fontOption?.label ?? defaultFontFamily)
       setSelectedFontSize(Number.isFinite(fontSize) ? String(fontSize) : String(defaultFontSize))
 
       setEditorStateVersion((version) => version + 1)
@@ -66,6 +97,30 @@ function Toolbar({ editor }: ToolbarProps) {
       editor.off('transaction', updateSelectedTextRange)
     }
   }, [editor])
+
+  useEffect(() => {
+    if (!isFontMenuOpen && !isTextColorMenuOpen && !isTableMenuOpen) return undefined
+
+    const closeMenusOnOutsideClick = (event: PointerEvent) => {
+      const target = event.target as Node
+
+      if (!fontDropdownRef.current?.contains(target)) {
+        setIsFontMenuOpen(false)
+      }
+
+      if (!textColorDropdownRef.current?.contains(target)) {
+        setIsTextColorMenuOpen(false)
+      }
+
+      if (!tableDropdownRef.current?.contains(target)) {
+        setIsTableMenuOpen(false)
+      }
+    }
+
+    document.addEventListener('pointerdown', closeMenusOnOutsideClick)
+
+    return () => document.removeEventListener('pointerdown', closeMenusOnOutsideClick)
+  }, [isFontMenuOpen, isTableMenuOpen, isTextColorMenuOpen])
 
   const commandChain = () => {
     const chain = editor?.chain()
@@ -115,6 +170,12 @@ function Toolbar({ editor }: ToolbarProps) {
   const clearTextColor = () => {
     commandChain()?.focus().unsetTextColor().run()
     setIsTextColorMenuOpen(false)
+  }
+
+  const applyFontFamily = (fontFamily: string, label: string) => {
+    setSelectedFontFamily(label)
+    commandChain()?.focus().setTextFont(fontFamily).run()
+    setIsFontMenuOpen(false)
   }
 
   const applyFontSize = (size: number) => {
@@ -197,7 +258,45 @@ function Toolbar({ editor }: ToolbarProps) {
       <Divider />
       <DropdownLabel label="Normal text" />
       <Divider />
-      <DropdownLabel label="Arial" />
+      <div className="font-family-dropdown" ref={fontDropdownRef}>
+        <DropdownLabel
+          disabled={!editor}
+          label={selectedFontFamily}
+          onMouseDown={(event) => {
+            event.preventDefault()
+            setIsFontMenuOpen((isOpen) => !isOpen)
+            setIsTextColorMenuOpen(false)
+            setIsTableMenuOpen(false)
+          }}
+        />
+        {isFontMenuOpen && editor && (
+          <div className="font-family-menu" role="menu">
+            <button className="font-family-menu__add" role="menuitem" type="button">
+              <Icon>text_fields</Icon>
+              <span>Font lainnya</span>
+            </button>
+            <div className="font-family-menu__separator" />
+            <div className="font-family-menu__list">
+              {allFontOptions.map((font) => (
+                <button
+                  className={`font-family-menu__item ${selectedFontFamily === font.label ? 'font-family-menu__item--active' : ''}`}
+                  key={`all-${font.value}`}
+                  onMouseDown={(event) => {
+                    event.preventDefault()
+                    applyFontFamily(font.value, font.label)
+                  }}
+                  role="menuitem"
+                  style={{ fontFamily: font.value }}
+                  type="button"
+                >
+                  <Icon>{selectedFontFamily === font.label ? 'check' : ''}</Icon>
+                  <span>{font.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
       <Divider />
       <div className="font-size-control">
         <button
@@ -240,13 +339,14 @@ function Toolbar({ editor }: ToolbarProps) {
         <span className="toolbar-group" key={item.icon}>
           {[6, 10].includes(index) && <Divider />}
           {item.icon === 'format_color_text' ? (
-            <div className="text-color-dropdown">
+            <div className="text-color-dropdown" ref={textColorDropdownRef}>
               <button
                 className={`tool-button text-color-trigger ${isActive(item.icon) || isTextColorMenuOpen ? 'tool-button--active' : ''}`}
                 disabled={!editor}
                 onMouseDown={(event) => {
                   event.preventDefault()
                   setIsTextColorMenuOpen((isOpen) => !isOpen)
+                  setIsFontMenuOpen(false)
                   setIsTableMenuOpen(false)
                 }}
                 title={item.title}
@@ -312,13 +412,14 @@ function Toolbar({ editor }: ToolbarProps) {
         </span>
       ))}
       <Divider />
-      <div className="table-actions-dropdown">
+      <div className="table-actions-dropdown" ref={tableDropdownRef}>
         <button
           className={`tool-button table-actions-trigger ${isTableMenuOpen ? 'tool-button--active' : ''}`}
           disabled={!editor}
           onMouseDown={(event) => {
             event.preventDefault()
             setIsTableMenuOpen((isOpen) => !isOpen)
+            setIsFontMenuOpen(false)
             setIsTextColorMenuOpen(false)
           }}
           title="Table"
