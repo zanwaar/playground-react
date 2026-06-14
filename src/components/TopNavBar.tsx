@@ -81,20 +81,24 @@ function TopNavBar({ editor }: TopNavBarProps) {
   const [activeTab, setActiveTab] = useState(navItems[0])
   const [importError, setImportError] = useState('')
   const [isPageSetupOpen, setIsPageSetupOpen] = useState(false)
+  const [isFileMenuOpen, setIsFileMenuOpen] = useState(false)
   const [pageSetup, setPageSetup] = useState<PageSetup>({ paperSize: 'a4', orientation: 'portrait', margin: 'normal', marginValue: null })
   const pageSetupRef = useRef<HTMLDivElement | null>(null)
+  const fileMenuRef = useRef<HTMLDivElement | null>(null)
+  const importInputRef = useRef<HTMLInputElement | null>(null)
 
   useEffect(() => {
-    if (!isPageSetupOpen) return undefined
+    if (!isPageSetupOpen && !isFileMenuOpen) return undefined
 
-    const closePageSetup = (event: PointerEvent) => {
+    const closeMenus = (event: PointerEvent) => {
       const target = event.target as Node
       if (!pageSetupRef.current?.contains(target)) setIsPageSetupOpen(false)
+      if (!fileMenuRef.current?.contains(target)) setIsFileMenuOpen(false)
     }
 
-    document.addEventListener('pointerdown', closePageSetup)
-    return () => document.removeEventListener('pointerdown', closePageSetup)
-  }, [isPageSetupOpen])
+    document.addEventListener('pointerdown', closeMenus)
+    return () => document.removeEventListener('pointerdown', closeMenus)
+  }, [isPageSetupOpen, isFileMenuOpen])
 
   useEffect(() => {
     if (!editor) return undefined
@@ -213,115 +217,81 @@ function TopNavBar({ editor }: TopNavBarProps) {
             </div>
             <nav className="menu-tabs" aria-label="Document menu">
               {navItems.map((item) => (
-                <button
-                  className={`menu-tab ${activeTab === item ? 'menu-tab--active' : ''}`}
-                  key={item}
-                  onClick={() => setActiveTab(item)}
-                  type="button"
-                >
-                  {item}
-                </button>
+                item === 'File' ? (
+                  <div className="file-menu" key={item} ref={fileMenuRef}>
+                    <button
+                      className={`menu-tab ${isFileMenuOpen ? 'menu-tab--active' : ''}`}
+                      onClick={() => {
+                        setActiveTab(item)
+                        setIsFileMenuOpen((isOpen) => !isOpen)
+                        setIsPageSetupOpen(false)
+                        setImportError('')
+                      }}
+                      type="button"
+                    >
+                      {item}
+                    </button>
+                    {isFileMenuOpen && (
+                      <div className="file-menu__list" role="menu">
+                        <button
+                          className="file-menu__item"
+                          disabled={!editor}
+                          onClick={() => {
+                            setIsFileMenuOpen(false)
+                            importInputRef.current?.click()
+                          }}
+                          role="menuitem"
+                          type="button"
+                        >
+                          <Icon>upload_file</Icon>
+                          <span>Import JSON</span>
+                        </button>
+                        <button
+                          className="file-menu__item"
+                          disabled={!editor}
+                          onClick={() => {
+                            setIsFileMenuOpen(false)
+                            exportJson()
+                          }}
+                          role="menuitem"
+                          type="button"
+                        >
+                          <Icon>download</Icon>
+                          <span>Export JSON</span>
+                        </button>
+                        <div className="file-menu__separator" />
+                        <button
+                          className="file-menu__item"
+                          disabled={!editor}
+                          onClick={() => {
+                            setIsFileMenuOpen(false)
+                            setIsPageSetupOpen(true)
+                          }}
+                          role="menuitem"
+                          type="button"
+                        >
+                          <Icon>article</Icon>
+                          <span>Pengaturan Halaman</span>
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <button
+                    className={`menu-tab ${activeTab === item ? 'menu-tab--active' : ''}`}
+                    key={item}
+                    onClick={() => setActiveTab(item)}
+                    type="button"
+                  >
+                    {item}
+                  </button>
+                )
               ))}
             </nav>
           </div>
         </div>
 
         <div className="top-actions">
-          <div className="page-setup" ref={pageSetupRef}>
-            <button
-              className={`page-setup-trigger ${isPageSetupOpen ? 'page-setup-trigger--active' : ''}`}
-              disabled={!editor}
-              onMouseDown={(event) => {
-                event.preventDefault()
-                setIsPageSetupOpen((isOpen) => !isOpen)
-                setImportError('')
-              }}
-              type="button"
-            >
-              <Icon>article</Icon>
-              Pengaturan Halaman
-            </button>
-            {isPageSetupOpen && editor && (
-              <div className="page-setup-panel" role="dialog" aria-label="Pengaturan Halaman">
-                <div>
-                  <h2>Pengaturan Halaman</h2>
-                  <p>Atur ukuran kertas, orientasi, dan margin.</p>
-                </div>
-                <label>
-                  <span>Ukuran kertas</span>
-                  <select
-                    value={pageSetup.paperSize}
-                    onChange={(event) => applyPageSetup({ ...pageSetup, paperSize: event.target.value as PageSetup['paperSize'] })}
-                  >
-                    {pageSetupOptions.paperSize.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-                  </select>
-                </label>
-                <label>
-                  <span>Orientasi</span>
-                  <select
-                    value={pageSetup.orientation}
-                    onChange={(event) => applyPageSetup({ ...pageSetup, orientation: event.target.value as PageSetup['orientation'] })}
-                  >
-                    {pageSetupOptions.orientation.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-                  </select>
-                </label>
-                <label>
-                  <span>Margin</span>
-                  <select
-                    value={pageSetup.margin}
-                    onChange={(event) => applyMarginSelection(event.target.value as PageSetup['margin'])}
-                  >
-                    {pageSetupOptions.margin.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
-                  </select>
-                </label>
-                {pageSetup.margin === 'custom' && (
-                  <div className="margin-grid">
-                    <span className="margin-grid__title">Margin (cm)</span>
-                    <div className="margin-grid__fields">
-                      {marginSideFields.map(({ side, label }) => (
-                        <label key={side}>
-                          <span>{label}</span>
-                          <input
-                            key={`${side}-${pageSetup.marginValue ?? ''}`}
-                            defaultValue={String(toCustomMargin(pageSetup.marginValue)[side])}
-                            min={0}
-                            onBlur={(event) => applyCustomMarginSide(side, event.target.value)}
-                            onKeyDown={(event) => {
-                              if (event.key === 'Enter') {
-                                event.preventDefault()
-                                applyCustomMarginSide(side, (event.target as HTMLInputElement).value)
-                              }
-                            }}
-                            step={0.1}
-                            type="number"
-                          />
-                        </label>
-                      ))}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-          <div className="json-actions" aria-label="JSON file actions">
-            <label className={`json-action ${!editor ? 'json-action--disabled' : ''}`}>
-              <Icon>upload_file</Icon>
-              Import JSON
-              <input
-                accept="application/json,.json"
-                disabled={!editor}
-                onChange={(event) => {
-                  void importJson(event.target.files?.[0] ?? null)
-                  event.currentTarget.value = ''
-                }}
-                type="file"
-              />
-            </label>
-            <button className="json-action" disabled={!editor} onClick={exportJson} type="button">
-              <Icon>download</Icon>
-              Export JSON
-            </button>
-          </div>
           <div className="quick-actions">
             {quickActions.map((icon) => (
               <button className="ghost-icon" key={icon} type="button">
@@ -340,6 +310,95 @@ function TopNavBar({ editor }: TopNavBarProps) {
           />
         </div>
       </div>
+      {isPageSetupOpen && editor && (
+        <div className="page-setup-overlay" role="presentation" onMouseDown={() => setIsPageSetupOpen(false)}>
+          <div
+            className="page-setup-panel"
+            role="dialog"
+            aria-label="Pengaturan Halaman"
+            ref={pageSetupRef}
+            onMouseDown={(event) => event.stopPropagation()}
+          >
+            <div className="page-setup-panel__header">
+              <div>
+                <h2>Pengaturan Halaman</h2>
+                <p>Atur ukuran kertas, orientasi, dan margin.</p>
+              </div>
+              <button
+                aria-label="Tutup"
+                className="page-setup-panel__close"
+                onClick={() => setIsPageSetupOpen(false)}
+                type="button"
+              >
+                <Icon>close</Icon>
+              </button>
+            </div>
+            <label>
+              <span>Ukuran kertas</span>
+              <select
+                value={pageSetup.paperSize}
+                onChange={(event) => applyPageSetup({ ...pageSetup, paperSize: event.target.value as PageSetup['paperSize'] })}
+              >
+                {pageSetupOptions.paperSize.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+              </select>
+            </label>
+            <label>
+              <span>Orientasi</span>
+              <select
+                value={pageSetup.orientation}
+                onChange={(event) => applyPageSetup({ ...pageSetup, orientation: event.target.value as PageSetup['orientation'] })}
+              >
+                {pageSetupOptions.orientation.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+              </select>
+            </label>
+            <label>
+              <span>Margin</span>
+              <select
+                value={pageSetup.margin}
+                onChange={(event) => applyMarginSelection(event.target.value as PageSetup['margin'])}
+              >
+                {pageSetupOptions.margin.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+              </select>
+            </label>
+            {pageSetup.margin === 'custom' && (
+              <div className="margin-grid">
+                <span className="margin-grid__title">Margin (cm)</span>
+                <div className="margin-grid__fields">
+                  {marginSideFields.map(({ side, label }) => (
+                    <label key={side}>
+                      <span>{label}</span>
+                      <input
+                        key={`${side}-${pageSetup.marginValue ?? ''}`}
+                        defaultValue={String(toCustomMargin(pageSetup.marginValue)[side])}
+                        min={0}
+                        onBlur={(event) => applyCustomMarginSide(side, event.target.value)}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter') {
+                            event.preventDefault()
+                            applyCustomMarginSide(side, (event.target as HTMLInputElement).value)
+                          }
+                        }}
+                        step={0.1}
+                        type="number"
+                      />
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+      <input
+        accept="application/json,.json"
+        className="hidden-file-input"
+        onChange={(event) => {
+          void importJson(event.target.files?.[0] ?? null)
+          event.currentTarget.value = ''
+        }}
+        ref={importInputRef}
+        type="file"
+      />
       {importError && <div className="json-error" role="alert">{importError}</div>}
     </header>
   )
