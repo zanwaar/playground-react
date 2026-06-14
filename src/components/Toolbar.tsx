@@ -21,6 +21,9 @@ type ToolbarProps = {
 }
 
 const defaultTextColor = '#063f81'
+const defaultFontSize = 11
+const minFontSize = 6
+const maxFontSize = 96
 const textColorPalette = ['#1c1b1f', '#5f6368', '#d93025', '#e37400', '#188038', '#1a73e8', '#673ab7', '#c2185b']
 const maxTablePickerRows = 8
 const maxTablePickerCols = 8
@@ -30,6 +33,7 @@ function Toolbar({ editor }: ToolbarProps) {
   const [, setEditorStateVersion] = useState(0)
   const [isTableMenuOpen, setIsTableMenuOpen] = useState(false)
   const [isTextColorMenuOpen, setIsTextColorMenuOpen] = useState(false)
+  const [selectedFontSize, setSelectedFontSize] = useState(String(defaultFontSize))
   const [selectedTextColor, setSelectedTextColor] = useState(defaultTextColor)
   const [tableInsertMode, setTableInsertMode] = useState<TableInsertMode>('table')
   const [tablePickerSize, setTablePickerSize] = useState({ rows: 3, cols: 3 })
@@ -44,6 +48,11 @@ function Toolbar({ editor }: ToolbarProps) {
       if (!empty) {
         selectedTextRange.current = { from, to }
       }
+
+      const textSize = editor.getAttributes('textSize').size
+      const fontSize = typeof textSize === 'string' ? Number.parseFloat(textSize) : Number.NaN
+
+      setSelectedFontSize(Number.isFinite(fontSize) ? String(fontSize) : String(defaultFontSize))
 
       setEditorStateVersion((version) => version + 1)
     }
@@ -106,6 +115,19 @@ function Toolbar({ editor }: ToolbarProps) {
   const clearTextColor = () => {
     commandChain()?.focus().unsetTextColor().run()
     setIsTextColorMenuOpen(false)
+  }
+
+  const applyFontSize = (size: number) => {
+    const nextSize = Number.isFinite(size) ? Math.min(maxFontSize, Math.max(minFontSize, size)) : defaultFontSize
+
+    setSelectedFontSize(String(nextSize))
+    commandChain()?.focus().setTextSize(`${nextSize}px`).run()
+  }
+
+  const changeFontSize = (delta: number) => {
+    const currentSize = Number.parseFloat(selectedFontSize)
+
+    applyFontSize((Number.isFinite(currentSize) ? currentSize : defaultFontSize) + delta)
   }
 
   const insertTable = (rows: number, cols: number) => {
@@ -178,9 +200,40 @@ function Toolbar({ editor }: ToolbarProps) {
       <DropdownLabel label="Arial" />
       <Divider />
       <div className="font-size-control">
-        <button className="tool-button tool-button--compact" type="button"><Icon>remove</Icon></button>
-        <input aria-label="Font size" defaultValue="11" />
-        <button className="tool-button tool-button--compact" type="button"><Icon>add</Icon></button>
+        <button
+          className="tool-button tool-button--compact"
+          disabled={!editor}
+          onMouseDown={(event) => {
+            event.preventDefault()
+            changeFontSize(-1)
+          }}
+          type="button"
+        ><Icon>remove</Icon></button>
+        <input
+          aria-label="Font size"
+          disabled={!editor}
+          max={maxFontSize}
+          min={minFontSize}
+          onBlur={() => applyFontSize(Number.parseFloat(selectedFontSize))}
+          onChange={(event) => setSelectedFontSize(event.target.value)}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter') {
+              event.preventDefault()
+              applyFontSize(Number.parseFloat(selectedFontSize))
+            }
+          }}
+          type="number"
+          value={selectedFontSize}
+        />
+        <button
+          className="tool-button tool-button--compact"
+          disabled={!editor}
+          onMouseDown={(event) => {
+            event.preventDefault()
+            changeFontSize(1)
+          }}
+          type="button"
+        ><Icon>add</Icon></button>
       </div>
       <Divider />
       {formattingActions.map((item, index) => (
