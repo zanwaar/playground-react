@@ -66,6 +66,13 @@ const textStyleOptions = [
   { label: 'Heading 2', level: 2 },
   { label: 'Heading 3', level: 3 },
 ] as const
+const lineSpacingOptions = [
+  { label: 'Tunggal', value: '1' },
+  { label: '1,15', value: '1.15' },
+  { label: '1,5', value: '1.5' },
+  { label: 'Ganda', value: '2' },
+] as const
+const paragraphSpacingValue = '12pt'
 type TableInsertMode = 'table' | 'grid'
 
 function Toolbar({ editor }: ToolbarProps) {
@@ -73,15 +80,20 @@ function Toolbar({ editor }: ToolbarProps) {
   const [isTableMenuOpen, setIsTableMenuOpen] = useState(false)
   const [isTextStyleMenuOpen, setIsTextStyleMenuOpen] = useState(false)
   const [isFontMenuOpen, setIsFontMenuOpen] = useState(false)
+  const [isLineSpacingMenuOpen, setIsLineSpacingMenuOpen] = useState(false)
   const [isTextColorMenuOpen, setIsTextColorMenuOpen] = useState(false)
   const [selectedTextStyle, setSelectedTextStyle] = useState<string>(textStyleOptions[0].label)
   const [selectedFontFamily, setSelectedFontFamily] = useState(defaultFontFamily)
   const [selectedFontSize, setSelectedFontSize] = useState(String(defaultFontSize))
   const [selectedTextColor, setSelectedTextColor] = useState(defaultTextColor)
+  const [selectedLineSpacing, setSelectedLineSpacing] = useState('1.15')
+  const [hasSpaceBefore, setHasSpaceBefore] = useState(false)
+  const [hasSpaceAfter, setHasSpaceAfter] = useState(false)
   const [tableInsertMode, setTableInsertMode] = useState<TableInsertMode>('table')
   const [tablePickerSize, setTablePickerSize] = useState({ rows: 3, cols: 3 })
   const fontDropdownRef = useRef<HTMLDivElement | null>(null)
   const textStyleDropdownRef = useRef<HTMLDivElement | null>(null)
+  const lineSpacingDropdownRef = useRef<HTMLDivElement | null>(null)
   const tableDropdownRef = useRef<HTMLDivElement | null>(null)
   const textColorDropdownRef = useRef<HTMLDivElement | null>(null)
   const selectedTextRange = useRef<{ from: number; to: number } | null>(null)
@@ -98,6 +110,9 @@ function Toolbar({ editor }: ToolbarProps) {
 
       const textSize = editor.getAttributes('textSize').size
       const textFont = editor.getAttributes('textFont').fontFamily
+      const paragraphAttributes = editor.getAttributes('paragraph')
+      const headingAttributes = editor.getAttributes('heading')
+      const activeBlockAttributes = editor.isActive('heading') ? headingAttributes : paragraphAttributes
       const fontOption = typeof textFont === 'string' ? fontOptions.find((option) => option.value === textFont) : null
       const activeTextStyle = textStyleOptions.find((option) => (
         option.level === null ? editor.isActive('paragraph') : editor.isActive('heading', { level: option.level })
@@ -106,6 +121,9 @@ function Toolbar({ editor }: ToolbarProps) {
       setSelectedTextStyle(activeTextStyle?.label ?? textStyleOptions[0].label)
       setSelectedFontFamily(fontOption?.label ?? defaultFontFamily)
       setSelectedFontSize(displayFontSize(textSize))
+      setSelectedLineSpacing(typeof activeBlockAttributes.lineHeight === 'string' ? activeBlockAttributes.lineHeight : '1.15')
+      setHasSpaceBefore(Boolean(activeBlockAttributes.spaceBefore))
+      setHasSpaceAfter(Boolean(activeBlockAttributes.spaceAfter))
 
       setEditorStateVersion((version) => version + 1)
     }
@@ -121,7 +139,7 @@ function Toolbar({ editor }: ToolbarProps) {
   }, [editor])
 
   useEffect(() => {
-    if (!isTextStyleMenuOpen && !isFontMenuOpen && !isTextColorMenuOpen && !isTableMenuOpen) return undefined
+    if (!isTextStyleMenuOpen && !isFontMenuOpen && !isLineSpacingMenuOpen && !isTextColorMenuOpen && !isTableMenuOpen) return undefined
 
     const closeMenusOnOutsideClick = (event: PointerEvent) => {
       const target = event.target as Node
@@ -132,6 +150,10 @@ function Toolbar({ editor }: ToolbarProps) {
 
       if (!fontDropdownRef.current?.contains(target)) {
         setIsFontMenuOpen(false)
+      }
+
+      if (!lineSpacingDropdownRef.current?.contains(target)) {
+        setIsLineSpacingMenuOpen(false)
       }
 
       if (!textColorDropdownRef.current?.contains(target)) {
@@ -146,7 +168,7 @@ function Toolbar({ editor }: ToolbarProps) {
     document.addEventListener('pointerdown', closeMenusOnOutsideClick)
 
     return () => document.removeEventListener('pointerdown', closeMenusOnOutsideClick)
-  }, [isTextStyleMenuOpen, isFontMenuOpen, isTableMenuOpen, isTextColorMenuOpen])
+  }, [isTextStyleMenuOpen, isFontMenuOpen, isLineSpacingMenuOpen, isTableMenuOpen, isTextColorMenuOpen])
 
   const commandChain = () => {
     const chain = editor?.chain()
@@ -223,6 +245,26 @@ function Toolbar({ editor }: ToolbarProps) {
     commandChain()?.focus().setTextSize(`${nextSize}pt`).run()
   }
 
+  const applyLineSpacing = (lineHeight: string) => {
+    setSelectedLineSpacing(lineHeight)
+    commandChain()?.focus().setLineSpacing(lineHeight).run()
+    setIsLineSpacingMenuOpen(false)
+  }
+
+  const toggleSpaceBefore = () => {
+    const nextValue = hasSpaceBefore ? null : paragraphSpacingValue
+
+    setHasSpaceBefore(!hasSpaceBefore)
+    commandChain()?.focus().setParagraphSpaceBefore(nextValue).run()
+  }
+
+  const toggleSpaceAfter = () => {
+    const nextValue = hasSpaceAfter ? null : paragraphSpacingValue
+
+    setHasSpaceAfter(!hasSpaceAfter)
+    commandChain()?.focus().setParagraphSpaceAfter(nextValue).run()
+  }
+
   const changeFontSize = (delta: number) => {
     const currentSize = Number.parseFloat(selectedFontSize)
 
@@ -268,6 +310,7 @@ function Toolbar({ editor }: ToolbarProps) {
       format_align_center: editor.isActive({ textAlign: 'center' }),
       format_align_right: editor.isActive({ textAlign: 'right' }),
       format_align_justify: editor.isActive({ textAlign: 'justify' }),
+      format_line_spacing: isLineSpacingMenuOpen,
       format_list_bulleted: editor.isActive('bulletList'),
       format_list_numbered: editor.isActive('orderedList'),
       format_quote: editor.isActive('blockquote'),
@@ -302,6 +345,7 @@ function Toolbar({ editor }: ToolbarProps) {
             event.preventDefault()
             setIsTextStyleMenuOpen((isOpen) => !isOpen)
             setIsFontMenuOpen(false)
+            setIsLineSpacingMenuOpen(false)
             setIsTextColorMenuOpen(false)
             setIsTableMenuOpen(false)
           }}
@@ -334,6 +378,7 @@ function Toolbar({ editor }: ToolbarProps) {
           onMouseDown={(event) => {
             event.preventDefault()
             setIsFontMenuOpen((isOpen) => !isOpen)
+            setIsLineSpacingMenuOpen(false)
             setIsTextColorMenuOpen(false)
             setIsTableMenuOpen(false)
           }}
@@ -406,7 +451,7 @@ function Toolbar({ editor }: ToolbarProps) {
       <Divider />
       {formattingActions.map((item, index) => (
         <span className="toolbar-group" key={item.icon}>
-          {[6, 10].includes(index) && <Divider />}
+          {[6, 11].includes(index) && <Divider />}
           {item.icon === 'format_color_text' ? (
             <div className="text-color-dropdown" ref={textColorDropdownRef}>
               <button
@@ -416,6 +461,7 @@ function Toolbar({ editor }: ToolbarProps) {
                   event.preventDefault()
                   setIsTextColorMenuOpen((isOpen) => !isOpen)
                   setIsFontMenuOpen(false)
+                  setIsLineSpacingMenuOpen(false)
                   setIsTableMenuOpen(false)
                 }}
                 title={item.title}
@@ -460,6 +506,69 @@ function Toolbar({ editor }: ToolbarProps) {
                     type="button"
                   >
                     Clear color
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : item.icon === 'format_line_spacing' ? (
+            <div className="line-spacing-dropdown" ref={lineSpacingDropdownRef}>
+              <button
+                className={`tool-button ${isActive(item.icon) ? 'tool-button--active' : ''}`}
+                disabled={!editor}
+                onMouseDown={(event) => {
+                  event.preventDefault()
+                  setIsLineSpacingMenuOpen((isOpen) => !isOpen)
+                  setIsTextStyleMenuOpen(false)
+                  setIsFontMenuOpen(false)
+                  setIsTextColorMenuOpen(false)
+                  setIsTableMenuOpen(false)
+                }}
+                title={item.title}
+                type="button"
+              >
+                <Icon>{item.icon}</Icon>
+              </button>
+              {isLineSpacingMenuOpen && editor && (
+                <div className="line-spacing-menu" role="menu">
+                  {lineSpacingOptions.map((option) => (
+                    <button
+                      className="line-spacing-menu__item"
+                      key={option.value}
+                      onMouseDown={(event) => {
+                        event.preventDefault()
+                        applyLineSpacing(option.value)
+                      }}
+                      role="menuitem"
+                      type="button"
+                    >
+                      <Icon>{selectedLineSpacing === option.value ? 'check' : ''}</Icon>
+                      <span>{option.label}</span>
+                    </button>
+                  ))}
+                  <div className="line-spacing-menu__separator" />
+                  <button
+                    className="line-spacing-menu__item line-spacing-menu__item--wide"
+                    onMouseDown={(event) => {
+                      event.preventDefault()
+                      toggleSpaceBefore()
+                    }}
+                    role="menuitem"
+                    type="button"
+                  >
+                    <Icon>{hasSpaceBefore ? 'check' : ''}</Icon>
+                    <span>Tambahkan spasi sebelum paragraf</span>
+                  </button>
+                  <button
+                    className="line-spacing-menu__item line-spacing-menu__item--wide"
+                    onMouseDown={(event) => {
+                      event.preventDefault()
+                      toggleSpaceAfter()
+                    }}
+                    role="menuitem"
+                    type="button"
+                  >
+                    <Icon>{hasSpaceAfter ? 'check' : ''}</Icon>
+                    <span>Tambahkan spasi sesudah paragraf</span>
                   </button>
                 </div>
               )}

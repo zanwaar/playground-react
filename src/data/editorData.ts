@@ -21,6 +21,7 @@ export const formattingActions = [
   { icon: 'format_align_center', title: 'Align center' },
   { icon: 'format_align_right', title: 'Align right' },
   { icon: 'format_align_justify', title: 'Justify' },
+  { icon: 'format_line_spacing', title: 'Line spacing' },
   { icon: 'format_list_bulleted', title: 'Bullet list' },
   { icon: 'format_list_numbered', title: 'Numbered list' },
   { icon: 'format_quote', title: 'Blockquote' },
