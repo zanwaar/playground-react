@@ -26,6 +26,16 @@ const defaultFontFamily = 'Roboto'
 const defaultFontSize = 11
 const minFontSize = 6
 const maxFontSize = 96
+
+const displayFontSize = (size: unknown): string => {
+  if (typeof size !== 'string') return String(defaultFontSize)
+
+  const value = Number.parseFloat(size)
+  if (!Number.isFinite(value)) return String(defaultFontSize)
+
+  return size.trim().endsWith('px') ? String(Math.round((value * 72) / 96)) : String(value)
+}
+
 const allFontOptions = [
   { label: 'Roboto', value: 'Roboto, Arial, sans-serif' },
   { label: 'Amatic SC', value: '"Amatic SC", cursive' },
@@ -78,12 +88,11 @@ function Toolbar({ editor }: ToolbarProps) {
       }
 
       const textSize = editor.getAttributes('textSize').size
-      const fontSize = typeof textSize === 'string' ? Number.parseFloat(textSize) : Number.NaN
       const textFont = editor.getAttributes('textFont').fontFamily
       const fontOption = typeof textFont === 'string' ? fontOptions.find((option) => option.value === textFont) : null
 
       setSelectedFontFamily(fontOption?.label ?? defaultFontFamily)
-      setSelectedFontSize(Number.isFinite(fontSize) ? String(fontSize) : String(defaultFontSize))
+      setSelectedFontSize(displayFontSize(textSize))
 
       setEditorStateVersion((version) => version + 1)
     }
@@ -182,7 +191,7 @@ function Toolbar({ editor }: ToolbarProps) {
     const nextSize = Number.isFinite(size) ? Math.min(maxFontSize, Math.max(minFontSize, size)) : defaultFontSize
 
     setSelectedFontSize(String(nextSize))
-    commandChain()?.focus().setTextSize(`${nextSize}px`).run()
+    commandChain()?.focus().setTextSize(`${nextSize}pt`).run()
   }
 
   const changeFontSize = (delta: number) => {
