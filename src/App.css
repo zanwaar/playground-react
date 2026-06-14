@@ -1158,3 +1158,70 @@ button {
     display: none;
   }
 }
+
+@media print {
+  @page {
+    margin: 0;
+  }
+
+  html,
+  body {
+    background: #ffffff;
+    height: auto;
+    margin: 0;
+    overflow: visible;
+    padding: 0;
+  }
+
+  .editor-shell {
+    background: #ffffff;
+    display: block;
+    height: auto;
+    overflow: visible;
+  }
+
+  .top-nav,
+  .toolbar,
+  .status-bar,
+  .page-setup-overlay,
+  .hidden-file-input,
+  .json-error {
+    display: none !important;
+  }
+
+  .workspace {
+    align-items: stretch;
+    background: #ffffff;
+    display: block;
+    overflow: visible;
+    padding: 0;
+  }
+
+  .word-editor-document,
+  .word-page-document {
+    display: block;
+  }
+
+  .a4-page {
+    border: 0 !important;
+    box-shadow: none !important;
+    break-after: page;
+    margin: 0 auto !important;
+    page-break-after: always;
+  }
+
+  .a4-page--last,
+  .a4-page:last-child {
+    break-after: auto;
+    page-break-after: auto;
+  }
+
+  .a4-page table[data-docs-table-kind='grid'],
+  .a4-page table[data-docs-table-kind='grid'] th,
+  .a4-page table[data-docs-table-kind='grid'] td,
+  .a4-page th[data-docs-cell-kind='grid'],
+  .a4-page td[data-docs-cell-kind='grid'] {
+    border-color: transparent !important;
+    border-style: none !important;
+  }
+}

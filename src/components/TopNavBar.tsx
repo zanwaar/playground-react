@@ -273,6 +273,19 @@ function TopNavBar({ editor }: TopNavBarProps) {
                           <Icon>article</Icon>
                           <span>Pengaturan Halaman</span>
                         </button>
+                        <button
+                          className="file-menu__item"
+                          disabled={!editor}
+                          onClick={() => {
+                            setIsFileMenuOpen(false)
+                            window.print()
+                          }}
+                          role="menuitem"
+                          type="button"
+                        >
+                          <Icon>print</Icon>
+                          <span>Print</span>
+                        </button>
                       </div>
                     )}
                   </div>

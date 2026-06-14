@@ -186,6 +186,7 @@ function Toolbar({ editor }: ToolbarProps) {
     if (!editor) return
     if (icon === 'undo') commandChain()?.undo().focus().run()
     if (icon === 'redo') commandChain()?.redo().focus().run()
+    if (icon === 'print') window.print()
   }
 
   const runFormattingAction = (icon: string) => {
@@ -338,7 +339,7 @@ function Toolbar({ editor }: ToolbarProps) {
       {toolbarLeft.map((item) => (
         <button
           className="tool-button"
-          disabled={!editor || !['undo', 'redo'].includes(item.icon)}
+          disabled={!editor || !['undo', 'redo', 'print'].includes(item.icon)}
           key={item.icon}
           onMouseDown={(event) => {
             event.preventDefault()

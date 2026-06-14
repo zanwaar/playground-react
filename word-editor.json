@@ -990,16 +990,6 @@
           }
         }
       ]
-    },
-    {
-      "type": "paragraph",
-      "attrs": {
-        "textAlign": null,
-        "lineHeight": null,
-        "spaceBefore": null,
-        "spaceAfter": null,
-        "wordPageSplit": null
-      }
     }
   ]
 }
