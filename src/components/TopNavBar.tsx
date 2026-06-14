@@ -1,12 +1,35 @@
 import type { JSONContent } from '@tiptap/core'
 import type { Editor } from '@tiptap/react'
-import { useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { navItems, quickActions } from '../data/editorData'
 import Icon from './Icon'
+import { mergeSplitWordParagraphs } from 'tiptap-docs-kit'
 
 interface TopNavBarProps {
   editor: Editor | null
 }
+
+type PageSetup = {
+  paperSize: 'a4' | 'letter'
+  orientation: 'portrait' | 'landscape'
+  margin: 'normal' | 'narrow' | 'wide'
+}
+
+const pageSetupOptions = {
+  paperSize: [
+    { label: 'A4', value: 'a4' },
+    { label: 'Letter', value: 'letter' },
+  ],
+  orientation: [
+    { label: 'Potret', value: 'portrait' },
+    { label: 'Lanskap', value: 'landscape' },
+  ],
+  margin: [
+    { label: 'Normal', value: 'normal' },
+    { label: 'Sempit', value: 'narrow' },
+    { label: 'Lebar', value: 'wide' },
+  ],
+} as const
 
 const isJsonContent = (value: unknown): value is JSONContent => {
   if (!value || typeof value !== 'object') return false
@@ -31,6 +54,66 @@ const downloadJsonFile = (content: JSONContent) => {
 function TopNavBar({ editor }: TopNavBarProps) {
   const [activeTab, setActiveTab] = useState(navItems[0])
   const [importError, setImportError] = useState('')
+  const [isPageSetupOpen, setIsPageSetupOpen] = useState(false)
+  const [pageSetup, setPageSetup] = useState<PageSetup>({ paperSize: 'a4', orientation: 'portrait', margin: 'normal' })
+  const pageSetupRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    if (!isPageSetupOpen) return undefined
+
+    const closePageSetup = (event: PointerEvent) => {
+      const target = event.target as Node
+      if (!pageSetupRef.current?.contains(target)) setIsPageSetupOpen(false)
+    }
+
+    document.addEventListener('pointerdown', closePageSetup)
+    return () => document.removeEventListener('pointerdown', closePageSetup)
+  }, [isPageSetupOpen])
+
+  useEffect(() => {
+    if (!editor) return undefined
+
+    const updatePageSetup = () => {
+      const attrs = editor.getAttributes('page')
+
+      setPageSetup({
+        paperSize: attrs.paperSize === 'letter' ? 'letter' : 'a4',
+        orientation: attrs.orientation === 'landscape' ? 'landscape' : 'portrait',
+        margin: attrs.margin === 'narrow' || attrs.margin === 'wide' ? attrs.margin : 'normal',
+      })
+    }
+
+    editor.on('selectionUpdate', updatePageSetup)
+    editor.on('transaction', updatePageSetup)
+    updatePageSetup()
+
+    return () => {
+      editor.off('selectionUpdate', updatePageSetup)
+      editor.off('transaction', updatePageSetup)
+    }
+  }, [editor])
+
+  const applyPageSetup = (nextPageSetup: PageSetup) => {
+    if (!editor) return
+
+    setPageSetup(nextPageSetup)
+
+    const transaction = editor.state.tr
+    editor.state.doc.forEach((node, offset) => {
+      if (node.type.name !== 'page') return
+
+      transaction.setNodeMarkup(offset, undefined, {
+        ...node.attrs,
+        ...nextPageSetup,
+      })
+    })
+
+    if (transaction.docChanged) {
+      editor.view.dispatch(transaction.scrollIntoView())
+    }
+
+    mergeSplitWordParagraphs(editor)
+  }
 
   const exportJson = () => {
     if (!editor) return
@@ -90,6 +173,56 @@ function TopNavBar({ editor }: TopNavBarProps) {
         </div>
 
         <div className="top-actions">
+          <div className="page-setup" ref={pageSetupRef}>
+            <button
+              className={`page-setup-trigger ${isPageSetupOpen ? 'page-setup-trigger--active' : ''}`}
+              disabled={!editor}
+              onMouseDown={(event) => {
+                event.preventDefault()
+                setIsPageSetupOpen((isOpen) => !isOpen)
+                setImportError('')
+              }}
+              type="button"
+            >
+              <Icon>article</Icon>
+              Pengaturan Halaman
+            </button>
+            {isPageSetupOpen && editor && (
+              <div className="page-setup-panel" role="dialog" aria-label="Pengaturan Halaman">
+                <div>
+                  <h2>Pengaturan Halaman</h2>
+                  <p>Atur ukuran kertas, orientasi, dan margin.</p>
+                </div>
+                <label>
+                  <span>Ukuran kertas</span>
+                  <select
+                    value={pageSetup.paperSize}
+                    onChange={(event) => applyPageSetup({ ...pageSetup, paperSize: event.target.value as PageSetup['paperSize'] })}
+                  >
+                    {pageSetupOptions.paperSize.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                  </select>
+                </label>
+                <label>
+                  <span>Orientasi</span>
+                  <select
+                    value={pageSetup.orientation}
+                    onChange={(event) => applyPageSetup({ ...pageSetup, orientation: event.target.value as PageSetup['orientation'] })}
+                  >
+                    {pageSetupOptions.orientation.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                  </select>
+                </label>
+                <label>
+                  <span>Margin</span>
+                  <select
+                    value={pageSetup.margin}
+                    onChange={(event) => applyPageSetup({ ...pageSetup, margin: event.target.value as PageSetup['margin'] })}
+                  >
+                    {pageSetupOptions.margin.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+                  </select>
+                </label>
+              </div>
+            )}
+          </div>
           <div className="json-actions" aria-label="JSON file actions">
             <label className={`json-action ${!editor ? 'json-action--disabled' : ''}`}>
               <Icon>upload_file</Icon>
