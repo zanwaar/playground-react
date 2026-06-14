@@ -21,6 +21,7 @@ type ToolbarProps = {
 }
 
 const defaultTextColor = '#063f81'
+const textColorPalette = ['#1c1b1f', '#5f6368', '#d93025', '#e37400', '#188038', '#1a73e8', '#673ab7', '#c2185b']
 const maxTablePickerRows = 8
 const maxTablePickerCols = 8
 type TableInsertMode = 'table' | 'grid'
@@ -28,6 +29,8 @@ type TableInsertMode = 'table' | 'grid'
 function Toolbar({ editor }: ToolbarProps) {
   const [, setEditorStateVersion] = useState(0)
   const [isTableMenuOpen, setIsTableMenuOpen] = useState(false)
+  const [isTextColorMenuOpen, setIsTextColorMenuOpen] = useState(false)
+  const [selectedTextColor, setSelectedTextColor] = useState(defaultTextColor)
   const [tableInsertMode, setTableInsertMode] = useState<TableInsertMode>('table')
   const [tablePickerSize, setTablePickerSize] = useState({ rows: 3, cols: 3 })
   const selectedTextRange = useRef<{ from: number; to: number } | null>(null)
@@ -81,7 +84,6 @@ function Toolbar({ editor }: ToolbarProps) {
       format_underlined: () => commandChain()?.focus().toggleUnderline().run() ?? false,
       strikethrough_s: () => commandChain()?.focus().toggleStrike().run() ?? false,
       code: () => commandChain()?.focus().toggleCode().run() ?? false,
-      format_color_text: () => commandChain()?.focus().setTextColor(defaultTextColor).run() ?? false,
       format_align_left: () => commandChain()?.focus().setTextAlign('left').run() ?? false,
       format_align_center: () => commandChain()?.focus().setTextAlign('center').run() ?? false,
       format_align_right: () => commandChain()?.focus().setTextAlign('right').run() ?? false,
@@ -93,6 +95,17 @@ function Toolbar({ editor }: ToolbarProps) {
     }
 
     commands[icon]?.()
+  }
+
+  const applyTextColor = (color: string) => {
+    setSelectedTextColor(color)
+    commandChain()?.focus().setTextColor(color).run()
+    setIsTextColorMenuOpen(false)
+  }
+
+  const clearTextColor = () => {
+    commandChain()?.focus().unsetTextColor().run()
+    setIsTextColorMenuOpen(false)
   }
 
   const insertTable = (rows: number, cols: number) => {
@@ -129,7 +142,7 @@ function Toolbar({ editor }: ToolbarProps) {
       format_underlined: editor.isActive('underline'),
       strikethrough_s: editor.isActive('strike'),
       code: editor.isActive('code'),
-      format_color_text: editor.isActive('textColor', { color: defaultTextColor }),
+      format_color_text: editor.isActive('textColor'),
       format_align_left: editor.isActive({ textAlign: 'left' }) || !['center', 'right', 'justify'].some((textAlign) => editor.isActive({ textAlign })),
       format_align_center: editor.isActive({ textAlign: 'center' }),
       format_align_right: editor.isActive({ textAlign: 'right' }),
@@ -173,18 +186,76 @@ function Toolbar({ editor }: ToolbarProps) {
       {formattingActions.map((item, index) => (
         <span className="toolbar-group" key={item.icon}>
           {[6, 10].includes(index) && <Divider />}
-          <button
-            className={`tool-button ${isActive(item.icon) ? 'tool-button--active' : ''}`}
-            disabled={!editor}
-            onMouseDown={(event) => {
-              event.preventDefault()
-              runFormattingAction(item.icon)
-            }}
-            title={item.title}
-            type="button"
-          >
-            <Icon className={item.highlighted ? 'icon-primary' : ''}>{item.icon}</Icon>
-          </button>
+          {item.icon === 'format_color_text' ? (
+            <div className="text-color-dropdown">
+              <button
+                className={`tool-button text-color-trigger ${isActive(item.icon) || isTextColorMenuOpen ? 'tool-button--active' : ''}`}
+                disabled={!editor}
+                onMouseDown={(event) => {
+                  event.preventDefault()
+                  setIsTextColorMenuOpen((isOpen) => !isOpen)
+                  setIsTableMenuOpen(false)
+                }}
+                title={item.title}
+                type="button"
+              >
+                <Icon className={item.highlighted ? 'icon-primary' : ''}>{item.icon}</Icon>
+                <span className="text-color-swatch" style={{ backgroundColor: selectedTextColor }} />
+              </button>
+              {isTextColorMenuOpen && editor && (
+                <div className="text-color-menu" role="menu">
+                  <div className="text-color-menu__label">Text color</div>
+                  <div className="text-color-palette">
+                    {textColorPalette.map((color) => (
+                      <button
+                        aria-label={`Set text color ${color}`}
+                        className="text-color-option"
+                        key={color}
+                        onMouseDown={(event) => {
+                          event.preventDefault()
+                          applyTextColor(color)
+                        }}
+                        style={{ backgroundColor: color }}
+                        type="button"
+                      />
+                    ))}
+                  </div>
+                  <label className="text-color-custom">
+                    <span>Custom</span>
+                    <input
+                      aria-label="Custom text color"
+                      type="color"
+                      value={selectedTextColor}
+                      onChange={(event) => applyTextColor(event.target.value)}
+                    />
+                  </label>
+                  <button
+                    className="text-color-clear"
+                    onMouseDown={(event) => {
+                      event.preventDefault()
+                      clearTextColor()
+                    }}
+                    type="button"
+                  >
+                    Clear color
+                  </button>
+                </div>
+              )}
+            </div>
+          ) : (
+            <button
+              className={`tool-button ${isActive(item.icon) ? 'tool-button--active' : ''}`}
+              disabled={!editor}
+              onMouseDown={(event) => {
+                event.preventDefault()
+                runFormattingAction(item.icon)
+              }}
+              title={item.title}
+              type="button"
+            >
+              <Icon className={item.highlighted ? 'icon-primary' : ''}>{item.icon}</Icon>
+            </button>
+          )}
         </span>
       ))}
       <Divider />
@@ -195,6 +266,7 @@ function Toolbar({ editor }: ToolbarProps) {
           onMouseDown={(event) => {
             event.preventDefault()
             setIsTableMenuOpen((isOpen) => !isOpen)
+            setIsTextColorMenuOpen(false)
           }}
           title="Table"
           type="button"
