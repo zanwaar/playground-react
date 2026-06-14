@@ -1,9 +1,62 @@
+import type { JSONContent } from '@tiptap/core'
+import type { Editor } from '@tiptap/react'
 import { useState } from 'react'
 import { navItems, quickActions } from '../data/editorData'
 import Icon from './Icon'
 
-function TopNavBar() {
+interface TopNavBarProps {
+  editor: Editor | null
+}
+
+const isJsonContent = (value: unknown): value is JSONContent => {
+  if (!value || typeof value !== 'object') return false
+
+  const content = value as JSONContent
+  return typeof content.type === 'string'
+}
+
+const downloadJsonFile = (content: JSONContent) => {
+  const blob = new Blob([JSON.stringify(content, null, 2)], { type: 'application/json' })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement('a')
+
+  link.href = url
+  link.download = `word-editor-${new Date().toISOString().slice(0, 10)}.json`
+  document.body.appendChild(link)
+  link.click()
+  link.remove()
+  URL.revokeObjectURL(url)
+}
+
+function TopNavBar({ editor }: TopNavBarProps) {
   const [activeTab, setActiveTab] = useState(navItems[0])
+  const [importError, setImportError] = useState('')
+
+  const exportJson = () => {
+    if (!editor) return
+
+    setImportError('')
+    downloadJsonFile(editor.getJSON())
+  }
+
+  const importJson = async (file: File | null) => {
+    if (!editor || !file) return
+
+    setImportError('')
+
+    try {
+      const parsedJson = JSON.parse(await file.text()) as unknown
+      if (!isJsonContent(parsedJson)) {
+        setImportError('Invalid editor JSON file')
+        return
+      }
+
+      editor.commands.setContent(parsedJson)
+      editor.commands.focus('start')
+    } catch {
+      setImportError('Could not read JSON file')
+    }
+  }
 
   return (
     <header className="top-nav">
@@ -37,6 +90,25 @@ function TopNavBar() {
         </div>
 
         <div className="top-actions">
+          <div className="json-actions" aria-label="JSON file actions">
+            <label className={`json-action ${!editor ? 'json-action--disabled' : ''}`}>
+              <Icon>upload_file</Icon>
+              Import JSON
+              <input
+                accept="application/json,.json"
+                disabled={!editor}
+                onChange={(event) => {
+                  void importJson(event.target.files?.[0] ?? null)
+                  event.currentTarget.value = ''
+                }}
+                type="file"
+              />
+            </label>
+            <button className="json-action" disabled={!editor} onClick={exportJson} type="button">
+              <Icon>download</Icon>
+              Export JSON
+            </button>
+          </div>
           <div className="quick-actions">
             {quickActions.map((icon) => (
               <button className="ghost-icon" key={icon} type="button">
@@ -55,6 +127,7 @@ function TopNavBar() {
           />
         </div>
       </div>
+      {importError && <div className="json-error" role="alert">{importError}</div>}
     </header>
   )
 }

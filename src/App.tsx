@@ -24,7 +24,7 @@ function App() {
 
   return (
     <div className="editor-shell">
-      <TopNavBar />
+      <TopNavBar editor={editor} />
       <Toolbar editor={editor} />
       <Workspace editor={editor} onPageChange={setCurrentPage} />
       <StatusBar currentPage={currentPage} totalPages={editor?.state.doc.childCount ?? 3} />

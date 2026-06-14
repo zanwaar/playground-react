@@ -140,6 +140,53 @@ button {
   gap: 8px;
 }
 
+.json-actions {
+  align-items: center;
+  display: flex;
+  gap: 6px;
+}
+
+.json-action {
+  align-items: center;
+  background: transparent;
+  border-radius: 999px;
+  color: var(--on-surface-variant);
+  display: inline-flex;
+  font-size: 13px;
+  font-weight: 500;
+  gap: 6px;
+  line-height: 20px;
+  padding: 8px 10px;
+  transition: background-color 150ms ease, color 150ms ease;
+}
+
+.json-action:hover:not(:disabled),
+.json-action:not(.json-action--disabled):hover {
+  background: var(--surface-variant);
+  color: var(--on-surface);
+}
+
+.json-action:disabled,
+.json-action--disabled {
+  cursor: default;
+  opacity: 0.48;
+}
+
+.json-action input {
+  display: none;
+}
+
+.json-action .material-symbols-outlined {
+  font-size: 20px;
+}
+
+.json-error {
+  color: #b3261e;
+  font-size: 12px;
+  line-height: 16px;
+  padding: 4px 0 0 52px;
+}
+
 .quick-actions {
   gap: 4px;
   margin-right: 16px;
