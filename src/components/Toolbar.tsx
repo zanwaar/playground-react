@@ -60,19 +60,28 @@ const fontOptions = allFontOptions
 const textColorPalette = ['#1c1b1f', '#5f6368', '#d93025', '#e37400', '#188038', '#1a73e8', '#673ab7', '#c2185b']
 const maxTablePickerRows = 8
 const maxTablePickerCols = 8
+const textStyleOptions = [
+  { label: 'Normal text', level: null },
+  { label: 'Heading 1', level: 1 },
+  { label: 'Heading 2', level: 2 },
+  { label: 'Heading 3', level: 3 },
+] as const
 type TableInsertMode = 'table' | 'grid'
 
 function Toolbar({ editor }: ToolbarProps) {
   const [, setEditorStateVersion] = useState(0)
   const [isTableMenuOpen, setIsTableMenuOpen] = useState(false)
+  const [isTextStyleMenuOpen, setIsTextStyleMenuOpen] = useState(false)
   const [isFontMenuOpen, setIsFontMenuOpen] = useState(false)
   const [isTextColorMenuOpen, setIsTextColorMenuOpen] = useState(false)
+  const [selectedTextStyle, setSelectedTextStyle] = useState<string>(textStyleOptions[0].label)
   const [selectedFontFamily, setSelectedFontFamily] = useState(defaultFontFamily)
   const [selectedFontSize, setSelectedFontSize] = useState(String(defaultFontSize))
   const [selectedTextColor, setSelectedTextColor] = useState(defaultTextColor)
   const [tableInsertMode, setTableInsertMode] = useState<TableInsertMode>('table')
   const [tablePickerSize, setTablePickerSize] = useState({ rows: 3, cols: 3 })
   const fontDropdownRef = useRef<HTMLDivElement | null>(null)
+  const textStyleDropdownRef = useRef<HTMLDivElement | null>(null)
   const tableDropdownRef = useRef<HTMLDivElement | null>(null)
   const textColorDropdownRef = useRef<HTMLDivElement | null>(null)
   const selectedTextRange = useRef<{ from: number; to: number } | null>(null)
@@ -90,7 +99,11 @@ function Toolbar({ editor }: ToolbarProps) {
       const textSize = editor.getAttributes('textSize').size
       const textFont = editor.getAttributes('textFont').fontFamily
       const fontOption = typeof textFont === 'string' ? fontOptions.find((option) => option.value === textFont) : null
+      const activeTextStyle = textStyleOptions.find((option) => (
+        option.level === null ? editor.isActive('paragraph') : editor.isActive('heading', { level: option.level })
+      ))
 
+      setSelectedTextStyle(activeTextStyle?.label ?? textStyleOptions[0].label)
       setSelectedFontFamily(fontOption?.label ?? defaultFontFamily)
       setSelectedFontSize(displayFontSize(textSize))
 
@@ -108,10 +121,14 @@ function Toolbar({ editor }: ToolbarProps) {
   }, [editor])
 
   useEffect(() => {
-    if (!isFontMenuOpen && !isTextColorMenuOpen && !isTableMenuOpen) return undefined
+    if (!isTextStyleMenuOpen && !isFontMenuOpen && !isTextColorMenuOpen && !isTableMenuOpen) return undefined
 
     const closeMenusOnOutsideClick = (event: PointerEvent) => {
       const target = event.target as Node
+
+      if (!textStyleDropdownRef.current?.contains(target)) {
+        setIsTextStyleMenuOpen(false)
+      }
 
       if (!fontDropdownRef.current?.contains(target)) {
         setIsFontMenuOpen(false)
@@ -129,7 +146,7 @@ function Toolbar({ editor }: ToolbarProps) {
     document.addEventListener('pointerdown', closeMenusOnOutsideClick)
 
     return () => document.removeEventListener('pointerdown', closeMenusOnOutsideClick)
-  }, [isFontMenuOpen, isTableMenuOpen, isTextColorMenuOpen])
+  }, [isTextStyleMenuOpen, isFontMenuOpen, isTableMenuOpen, isTextColorMenuOpen])
 
   const commandChain = () => {
     const chain = editor?.chain()
@@ -185,6 +202,18 @@ function Toolbar({ editor }: ToolbarProps) {
     setSelectedFontFamily(label)
     commandChain()?.focus().setTextFont(fontFamily).run()
     setIsFontMenuOpen(false)
+  }
+
+  const applyTextStyle = (level: null | 1 | 2 | 3, label: string) => {
+    setSelectedTextStyle(label)
+
+    if (level === null) {
+      commandChain()?.focus().setParagraph().run()
+    } else {
+      commandChain()?.focus().setHeading({ level }).run()
+    }
+
+    setIsTextStyleMenuOpen(false)
   }
 
   const applyFontSize = (size: number) => {
@@ -265,7 +294,38 @@ function Toolbar({ editor }: ToolbarProps) {
         </button>
       ))}
       <Divider />
-      <DropdownLabel label="Normal text" />
+      <div className="text-style-dropdown" ref={textStyleDropdownRef}>
+        <DropdownLabel
+          disabled={!editor}
+          label={selectedTextStyle}
+          onMouseDown={(event) => {
+            event.preventDefault()
+            setIsTextStyleMenuOpen((isOpen) => !isOpen)
+            setIsFontMenuOpen(false)
+            setIsTextColorMenuOpen(false)
+            setIsTableMenuOpen(false)
+          }}
+        />
+        {isTextStyleMenuOpen && editor && (
+          <div className="text-style-menu" role="menu">
+            {textStyleOptions.map((option) => (
+              <button
+                className={`text-style-menu__item ${selectedTextStyle === option.label ? 'text-style-menu__item--active' : ''}`}
+                key={option.label}
+                onMouseDown={(event) => {
+                  event.preventDefault()
+                  applyTextStyle(option.level, option.label)
+                }}
+                role="menuitem"
+                type="button"
+              >
+                <Icon>{selectedTextStyle === option.label ? 'check' : ''}</Icon>
+                <span>{option.label}</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
       <Divider />
       <div className="font-family-dropdown" ref={fontDropdownRef}>
         <DropdownLabel

@@ -266,6 +266,51 @@ button {
   white-space: nowrap;
 }
 
+.text-style-dropdown {
+  position: relative;
+}
+
+.text-style-menu {
+  background: #ffffff;
+  border: 1px solid #dadce0;
+  border-radius: 4px;
+  box-shadow: 0 6px 18px rgb(60 64 67 / 20%);
+  left: 0;
+  padding: 8px 0;
+  position: absolute;
+  top: calc(100% + 8px);
+  width: 180px;
+  z-index: 20;
+}
+
+.text-style-menu__item {
+  align-items: center;
+  background: transparent;
+  color: #202124;
+  display: grid;
+  font-size: 14px;
+  grid-template-columns: 24px 1fr;
+  line-height: 20px;
+  min-height: 34px;
+  padding: 0 12px;
+  text-align: left;
+  width: 100%;
+}
+
+.text-style-menu__item .material-symbols-outlined {
+  color: #7d8083;
+  font-size: 18px;
+}
+
+.text-style-menu__item .material-symbols-outlined:empty {
+  visibility: hidden;
+}
+
+.text-style-menu__item:hover,
+.text-style-menu__item--active {
+  background: #f1f3f4;
+}
+
 .font-family-dropdown .dropdown-label {
   background: #dfe3e7;
   border-radius: 6px;
