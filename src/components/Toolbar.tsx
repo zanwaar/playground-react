@@ -97,6 +97,7 @@ function Toolbar({ editor }: ToolbarProps) {
   const tableDropdownRef = useRef<HTMLDivElement | null>(null)
   const textColorDropdownRef = useRef<HTMLDivElement | null>(null)
   const selectedTextRange = useRef<{ from: number; to: number } | null>(null)
+  const imageInputRef = useRef<HTMLInputElement | null>(null)
 
   useEffect(() => {
     if (!editor) return undefined
@@ -263,6 +264,19 @@ function Toolbar({ editor }: ToolbarProps) {
 
     setHasSpaceAfter(!hasSpaceAfter)
     commandChain()?.focus().setParagraphSpaceAfter(nextValue).run()
+  }
+
+  const insertImageFromFile = (file: File | null) => {
+    if (!editor || !file || !file.type.startsWith('image/')) return
+
+    const reader = new FileReader()
+    reader.onload = () => {
+      const src = typeof reader.result === 'string' ? reader.result : ''
+      if (!src) return
+
+      commandChain()?.focus().insertContent({ type: 'image', attrs: { src, alt: file.name } }).run()
+    }
+    reader.readAsDataURL(file)
   }
 
   const changeFontSize = (delta: number) => {
@@ -573,6 +587,19 @@ function Toolbar({ editor }: ToolbarProps) {
                 </div>
               )}
             </div>
+          ) : item.icon === 'image' ? (
+            <button
+              className="tool-button"
+              disabled={!editor}
+              onMouseDown={(event) => {
+                event.preventDefault()
+                imageInputRef.current?.click()
+              }}
+              title={item.title}
+              type="button"
+            >
+              <Icon>{item.icon}</Icon>
+            </button>
           ) : (
             <button
               className={`tool-button ${isActive(item.icon) ? 'tool-button--active' : ''}`}
@@ -688,6 +715,16 @@ function Toolbar({ editor }: ToolbarProps) {
         type="button"
       ><Icon>note_add</Icon></button>
       <button className="tool-button" type="button"><Icon>keyboard_arrow_up</Icon></button>
+      <input
+        accept="image/*"
+        className="hidden-file-input"
+        onChange={(event) => {
+          insertImageFromFile(event.target.files?.[0] ?? null)
+          event.currentTarget.value = ''
+        }}
+        ref={imageInputRef}
+        type="file"
+      />
     </section>
   )
 }
