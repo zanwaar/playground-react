@@ -1,7 +1,7 @@
 import { useEffect, useRef } from 'react'
 import { EditorContent } from '@tiptap/react'
 import type { Editor } from '@tiptap/react'
-import { bindWordPagePagination } from 'tiptap-docs-kit'
+import { bindWordPagePagination } from '@zanwaar/tiptap-docs-kit'
 
 
 type WorkspaceProps = {

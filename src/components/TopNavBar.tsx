@@ -3,7 +3,7 @@ import type { Editor } from '@tiptap/react'
 import { useEffect, useRef, useState } from 'react'
 import { navItems, quickActions } from '../data/editorData'
 import Icon from './Icon'
-import { mergeSplitWordParagraphs } from 'tiptap-docs-kit'
+import { mergeSplitWordParagraphs } from '@zanwaar/tiptap-docs-kit'
 
 interface TopNavBarProps {
   editor: Editor | null
