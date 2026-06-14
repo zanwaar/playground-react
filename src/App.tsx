@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { useEditor } from '@tiptap/react'
-import { DocsKit, createBlankWordPageDocument } from '@zanwaar/tiptap-docs-kit'
+import { DocsKit } from '@zanwaar/tiptap-docs-kit'
 import '@zanwaar/tiptap-docs-kit/style.css'
 import './App.css'
+import defaultDocument from './data/defaultDocument.json'
 import StatusBar from './components/StatusBar'
 import Toolbar from './components/Toolbar'
 import TopNavBar from './components/TopNavBar'
@@ -14,7 +15,7 @@ function App() {
     extensions: [
       DocsKit,
     ],
-    content: createBlankWordPageDocument(),
+    content: defaultDocument,
     editorProps: {
       attributes: {
         class: 'word-editor-document',
